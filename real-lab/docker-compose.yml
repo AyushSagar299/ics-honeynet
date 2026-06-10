@@ -1,0 +1,57 @@
+version: '3.8'
+
+networks:
+  real-lab-net:
+    external: true
+
+services:
+
+  openplc:
+    image: openplc/openplc_v3
+    container_name: openplc
+    ports:
+      - '8080:8080'   # web UI
+      - '502:502'     # Modbus TCP
+    networks:
+      real-lab-net:
+        ipv4_address: 10.10.0.10
+    restart: unless-stopped
+
+  snap7-sim:
+    build: ./snap7
+    container_name: snap7-sim
+    ports:
+      - '102:102'     # S7Comm
+    networks:
+      real-lab-net:
+        ipv4_address: 10.10.0.11
+    restart: unless-stopped
+
+  opcua-server:
+    build: ./opcua
+    container_name: opcua-server
+    ports:
+      - '4840:4840'   # OPC UA
+    networks:
+      real-lab-net:
+        ipv4_address: 10.10.0.12
+    restart: unless-stopped
+
+  flask-hmi:
+    build: ./hmi
+    container_name: flask-hmi
+    ports:
+      - '5000:5000'   # web HMI
+    networks:
+      real-lab-net:
+        ipv4_address: 10.10.0.13
+    restart: unless-stopped
+
+  eng-ws:
+    build: ./traffic
+    container_name: eng-ws
+    networks:
+      real-lab-net:
+        ipv4_address: 10.10.0.20
+    depends_on: [openplc, snap7-sim, opcua-server, flask-hmi]
+    restart: unless-stopped

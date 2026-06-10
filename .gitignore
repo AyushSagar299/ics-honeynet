@@ -1,0 +1,28 @@
+# Captures and logs (can be large / contain run-specific data)
+*.pcap
+*.pcap.gz
+analysis/*.log
+logging/logs/
+honeynet/logs/
+
+# Elasticsearch data volume (if ever bind-mounted)
+esdata/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+*.swp
+
+# Secrets / local env
+.env
+*.key
+*.pem
