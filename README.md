@@ -1,74 +1,88 @@
 # ICS Honeynet — Active Defence for Industrial Environments
 
-A honeynet that mirrors a real ICS lab, built end-to-end on macOS (Apple Silicon)
-with Docker Desktop. Master's thesis project.
+A Master's thesis project, built end-to-end on macOS (Apple Silicon) with Docker.
 
-**The idea:** build a *real* mini-factory in Docker first, capture its network
-fingerprint, then build *decoy* services that mirror it. Because the decoys inherit
-their fidelity from a real working system, attackers can't easily tell they're in a
-trap — which produces better attack data.
+**The claim:** *a honeypot fed with live values from a digital twin is far harder to
+fingerprint as fake than a traditional static honeypot, while the real equipment is
+never exposed to the attacker.* This repo builds a small ICS lab, a live digital twin,
+and decoys fed by that twin — then attacks them and measures the result.
 
-## The four "worlds" (separate Docker networks)
+## The three isolated networks
 
-| World        | What lives here                                  | Network        | Phase |
-|--------------|--------------------------------------------------|----------------|-------|
-| Real lab     | OpenPLC, Snap7, OPC UA server, Flask HMI         | `10.10.0.0/24` | 1     |
-| Honeynet     | Conpot, HoneyPLC, decoy OPC UA, decoy HMI        | `10.20.0.0/24` | 3     |
-| Attacker     | Kali Linux, nmap, Hydra, custom scripts          | `10.30.0.0/24` | 5     |
-| Observer     | Filebeat + Elasticsearch + Kibana                | (honeynet)     | 4     |
+| Network      | What lives here                                | Range          |
+|--------------|------------------------------------------------|----------------|
+| Real lab     | water-tank PLC (Modbus), passive listener      | `10.10.0.0/24` |
+| Honeynet     | live decoy, static decoy, Conpot, decoy HMI    | `10.20.0.0/24` |
+| Attacker     | nmap + the 5 attack scripts (Kali optional)    | `10.30.0.0/24` |
 
-The attacker can reach the honeynet, but **nothing** can reach the real lab.
+The attacker can reach the honeynet but has **no path** to the real lab. Data flows one
+way: real plant → twin → decoys.
 
-## Folder layout
+## What's built (Stage A + Months 1–4)
 
 ```
 ics-honeynet/
-├── real-lab/        # Phase 1 — the real mini-factory  (BUILT)
-│   ├── openplc/     #   OpenPLC PLC (uses prebuilt image, no Dockerfile)
-│   ├── snap7/       #   Siemens S7 simulator
-│   ├── opcua/       #   OPC UA server
-│   ├── hmi/         #   Flask HMI
-│   ├── traffic/     #   eng-ws background traffic generator
-│   └── docker-compose.yml
-├── honeynet/        # Phase 3 — decoys                  (empty)
-├── attacker/        # Phase 5 — Kali + attack scripts   (empty)
-├── logging/         # Phase 4 — ELK stack               (empty)
-└── analysis/        # Phase 2 & 7 — pcaps, Zeek, Jupyter (empty)
+├── real-lab/process-simulator/  # Stage A: water-tank PLC + Modbus server   ✅
+├── listener/                    # Month 1: passive DPI (Scapy) + Zeek logs   ✅
+│   ├── scapy/  zeek/
+├── bridge/                      # Month 2: pymodbus → MQTT publisher         ✅
+├── twin/                        # Month 2: digital twin (+ InfluxDB writer)  ✅
+├── pipeline/                    # Month 2: mosquitto + influxdb + grafana    ✅
+├── honeynet/                    # Month 3: the decoys                        ✅
+│   ├── modbus-decoy/            #   live decoy + static baseline
+│   ├── conpot/                  #   Conpot (static, realistic fingerprint)
+│   └── hmi/                     #   decoy HMI login honeypot
+├── attacker/                    # Month 3: 5 attack scripts + container      ✅
+├── logging/                     # Month 3: ELK stack (optional, heavy)       ✅
+├── analysis/                    # Month 4: charts + Jupyter notebook         ✅
+└── docs/                        # profiling note + thesis draft              ✅
 ```
 
-## Current status
-
-- **Phase 0 — Set up the Mac:** done (Homebrew, Docker, Python, git, nmap, VS Code).
-- **Phase 1 — Build the real lab:** files written, **not yet run**.
-- Phases 2–7: not started.
-
-## How to start the real lab (Phase 1.7)
+## Quick start
 
 ```bash
-# 1. Create the lab network (Phase 1.1) — only needed once
-docker network create --subnet=10.10.0.0/24 real-lab-net
+# 0. one-time setup
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+brew install mosquitto zeek nmap        # system tools
 
-# 2. Build and start everything
-cd ~/ics-honeynet/real-lab
-docker compose up -d
+# 1. the data services (MQTT, InfluxDB, Grafana)
+cd pipeline && docker compose up -d && cd ..
 
-# 3. Watch the background traffic generator
-docker compose logs -f eng-ws
+# 2. the live pipeline (each in its own terminal)
+.venv/bin/python real-lab/process-simulator/tank_plc.py     # the PLC        :5020
+.venv/bin/python bridge/bridge.py                           # bridge → MQTT
+.venv/bin/python twin/twin.py                               # the digital twin
+#   open http://localhost:3000 (Grafana) to watch it live
+
+# 3. the honeynet (each in its own terminal)
+.venv/bin/python honeynet/modbus-decoy/decoy.py             # live decoy     :5021
+.venv/bin/python honeynet/modbus-decoy/static_decoy.py      # static baseline:5022
+.venv/bin/python honeynet/hmi/decoy_hmi.py                  # decoy HMI      :8090
+
+# 4. attack it and see the results
+.venv/bin/python attacker/scripts/run_all.py                # the 5 scenarios
+cd analysis && ../.venv/bin/python collect_data.py && ../.venv/bin/python analysis.py
 ```
 
-**Done when:** `eng-ws` prints `[Modbus] registers: [...]` every 5 seconds,
-http://localhost:8080 shows the OpenPLC web UI, and http://localhost:5000 shows the HMI.
+Each folder has its own README with details.
 
-## Notes / likely first-run issues
+## Results (`analysis/`)
 
-- `version: '3.8'` in the compose file is obsolete in modern Docker Compose — the
-  `WARN ... attribute version is obsolete` message is harmless.
-- This is an **Apple Silicon (arm64)** Mac. If `openplc` won't start, it may be an
-  amd64-only image — add `platform: linux/amd64` to that service and make sure
-  *Use Rosetta for x86/amd64 emulation* is ticked in Docker Desktop → Settings → General.
-- The `snap7`, `pymodbus`, and `asyncua` Python code is copied verbatim from the build
-  guide. Library APIs change between versions, so expect to debug these when you run
-  `docker compose up` — that's the hands-on part of Phase 1. See the build guide's
-  "When you're stuck" section.
+| Experiment | Result |
+|------------|--------|
+| Twin fidelity (fig1) | decoy tracks the real PLC to **0.11%** mean error |
+| Believability (fig2) | live decoy moves (std **2.6**), static decoy frozen (std **0.0**) |
+| Detection coverage (fig3) | **100%** of Modbus reads/writes + HMI logins captured |
 
-Build guide: `Desktop/480 Project/guide/Build_Guide_Step_By_Step.docx`
+The thesis draft is in `docs/thesis.md`; the analysis notebook is
+`analysis/analysis.ipynb`.
+
+## Notes
+
+- **Apple Silicon:** most images are native arm64. Conpot / HoneyPLC / Kali are
+  amd64-only — run them with `--platform linux/amd64` and Rosetta.
+- **Version pins matter:** `pymodbus==3.6.9` (3.13 broke the classic server API),
+  `paho-mqtt==2.1.0` (needs `CallbackAPIVersion.VERSION2`). See `requirements.txt`.
+- **Ports on the laptop:** the real Modbus port 502 needs `sudo`, so the host tests use
+  5020/5021/5022; in Docker these map back to 502.

@@ -1,0 +1,26 @@
+# Ship the decoys' JSON logs into Elasticsearch, one document per line.
+filebeat.inputs:
+  - type: filestream
+    id: decoy-modbus
+    paths:
+      - /logs/decoy/*.log
+    parsers:
+      - ndjson:
+          target: ""
+          add_error_key: true
+
+  - type: filestream
+    id: decoy-hmi
+    paths:
+      - /logs/hmi/*.log
+    parsers:
+      - ndjson:
+          target: ""
+          add_error_key: true
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+
+setup.ilm.enabled: false
+setup.kibana:
+  host: "http://kibana:5601"

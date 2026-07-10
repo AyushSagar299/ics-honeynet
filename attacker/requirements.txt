@@ -1,0 +1,4 @@
+# Attack scripts (also run fine from the project venv on the host)
+pymodbus==3.6.9
+requests==2.32.3
+# plus nmap installed on the system (brew install nmap)

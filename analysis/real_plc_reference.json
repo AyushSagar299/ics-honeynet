@@ -1,0 +1,15 @@
+{
+  "reference_device": "Schneider Electric Modicon M340 (BMX P34 2020)",
+  "based_on": "the publicly documented behaviour of a real Schneider Modbus PLC: it reports a device identity, supports the standard Modbus function set (coils, discrete inputs, holding + input registers, writes), rejects out-of-range addresses with a proper exception, and its process values change over time",
+  "traits": {
+    "has_device_identity": true,
+    "read_coils": true,
+    "read_discrete_inputs": true,
+    "read_holding_registers": true,
+    "read_input_registers": true,
+    "write_single_register": true,
+    "write_single_coil": true,
+    "rejects_bad_address": true,
+    "values_change_over_time": true
+  }
+}

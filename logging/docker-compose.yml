@@ -1,0 +1,39 @@
+# OPTIONAL heavy tier: the full SIEM (Elasticsearch + Kibana + Filebeat).
+#
+# Elasticsearch alone wants 1-2 GB RAM. On a 4 GB Docker VM that is already
+# running the pipeline (mosquitto/influxdb/grafana), this is tight. If it
+# struggles, use the LIGHT path instead: analysis/summarize_attacks.py on the
+# decoy JSON logs, plus Zeek from listener/zeek for the network view.
+#
+#   docker compose up -d
+#   open http://localhost:5601        # Kibana
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.1
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false          # lab only -- no auth
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.14.1
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.14.1
+    user: root
+    command: ["--strict.perms=false"]
+    volumes:
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ../honeynet/modbus-decoy:/logs/decoy:ro   # decoy.log
+      - ../honeynet/hmi:/logs/hmi:ro              # hmi_attempts.log
+    depends_on:
+      - elasticsearch

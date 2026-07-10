@@ -1,0 +1,2 @@
+# The decoy HMI login honeypot
+flask==3.0.3

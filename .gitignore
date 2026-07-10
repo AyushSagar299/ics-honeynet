@@ -4,6 +4,8 @@
 analysis/*.log
 logging/logs/
 honeynet/logs/
+honeynet/**/*.log
+listener/zeek/logs/
 
 # Elasticsearch data volume (if ever bind-mounted)
 esdata/

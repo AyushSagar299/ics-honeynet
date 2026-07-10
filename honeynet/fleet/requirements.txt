@@ -1,0 +1,4 @@
+# The honeypot fleet + threat dashboard
+pymodbus==3.6.9
+flask==3.0.3
+geoip2fast          # offline IP -> country (bundled DB, no API key, no internet)

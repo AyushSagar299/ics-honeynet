@@ -1,0 +1,24 @@
+# Conpot -- a well-known ICS honeypot, used here as the STATIC baseline.
+#
+# It presents realistic Modbus / S7 / SNMP / HTTP / BACnet / IPMI services, so
+# its *fingerprint* looks like a real device -- but the values come from a fixed
+# template and never change. That frozen data is the weakness our live decoy
+# fixes, which is why Conpot is the perfect thing to measure against.
+#
+# It is an amd64-only image, so it runs under Rosetta on the M1 (give it ~20s to
+# boot). The default template serves Modbus on container port 5020 (not 502),
+# HTTP on 8800 and S7 on 10201 -- we map those to host ports here.
+#
+#   docker compose up -d      # start
+#   docker compose logs -f    # watch it boot ("Modbus server started on ...")
+#   docker compose down       # stop
+
+services:
+  conpot:
+    image: honeynet/conpot:latest
+    platform: linux/amd64
+    ports:
+      - "5502:5020"        # Modbus
+      - "8800:8800"        # HTTP (a fake device web page)
+      - "10201:10201"      # S7comm
+      - "16100:16100/udp"  # SNMP

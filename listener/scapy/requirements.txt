@@ -1,0 +1,2 @@
+# Passive DPI listener
+scapy==2.6.1

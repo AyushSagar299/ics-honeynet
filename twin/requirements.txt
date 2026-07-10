@@ -1,0 +1,3 @@
+# The twin: subscribe to MQTT, store in InfluxDB
+paho-mqtt==2.1.0
+influxdb-client==1.48.0

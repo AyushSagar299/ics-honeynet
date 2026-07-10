@@ -1,0 +1,28 @@
+# All Python dependencies for the project, pinned for reproducibility.
+# Install into a virtual environment:
+#   python3 -m venv .venv
+#   .venv/bin/pip install -r requirements.txt
+#
+# (System tools installed separately with Homebrew: mosquitto, zeek, wireshark, nmap.)
+
+# --- real lab, bridge, decoys ---
+pymodbus==3.6.9            # NOTE: 3.13 broke the classic server API; stay on 3.6.9
+paho-mqtt==2.1.0
+
+# --- passive DPI listener ---
+scapy==2.6.1
+
+# --- digital twin storage ---
+influxdb-client==1.48.0
+
+# --- decoy HMI + attacker scripts ---
+Flask==3.0.3
+requests==2.32.3
+
+# --- analysis / notebooks (Month 4) ---
+matplotlib==3.11.0
+pandas==3.0.3
+scikit-learn==1.9.0
+jupytext==1.19.4
+nbconvert==7.17.1
+ipykernel==7.3.0

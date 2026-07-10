@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Honeynet Threat Console</title>
+<style>
+  :root{
+    --bg:#0e141c; --panel:#151d27; --panel-2:#1b2531; --hover:#19222e;
+    --line:rgba(255,255,255,0.07); --line-2:rgba(255,255,255,0.11);
+    --text:#e8edf4; --text-2:#93a1b3; --text-3:#616e7e;
+    --accent:#5b9bff; --accent-soft:rgba(91,155,255,0.14);
+    --hi:#f0777f; --hi-bg:rgba(240,119,127,0.13);
+    --md:#e6b24d; --md-bg:rgba(230,178,77,0.13);
+    --lo:#68a2ff; --lo-bg:rgba(104,162,255,0.13);
+    --ok:#48cd8e; --ok-bg:rgba(72,205,142,0.13);
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+    font-size:14px;-webkit-font-smoothing:antialiased}
+  .app{max-width:1320px;margin:0 auto;padding:16px 20px 40px}
+
+  /* header */
+  .head{display:flex;align-items:center;gap:12px;padding:6px 2px 16px}
+  .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(150deg,#1f6feb,#0d3b8f);
+    display:grid;place-items:center;box-shadow:0 0 0 1px var(--line-2) inset}
+  .logo svg{width:16px;height:16px;fill:#dbe6ff}
+  .head h1{font-size:0.98rem;font-weight:650;letter-spacing:0.01em;margin:0}
+  .head .sub{font-size:0.76rem;color:var(--text-3);margin-top:1px}
+  .head .right{margin-left:auto;display:flex;align-items:center;gap:16px}
+  .live{display:inline-flex;align-items:center;gap:7px;font-size:0.74rem;color:var(--text-2);
+    letter-spacing:0.02em}
+  .live .d{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-bg)}
+  .clock{font-family:var(--mono);font-size:0.78rem;color:var(--text-2)}
+
+  /* toolbar */
+  .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .search{flex:1;display:flex;align-items:center;gap:9px;background:var(--panel);
+    border:1px solid var(--line);border-radius:9px;padding:0 12px;height:38px;transition:border-color .15s}
+  .search:focus-within{border-color:var(--accent)}
+  .search svg{width:15px;height:15px;fill:var(--text-3);flex:none}
+  .search input{background:none;border:none;outline:none;color:var(--text);font-size:0.86rem;
+    width:100%;font-family:var(--sans)}
+  .search input::placeholder{color:var(--text-3)}
+  .result{font-size:0.78rem;color:var(--text-3);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+  /* layout */
+  .grid{display:grid;grid-template-columns:236px 1fr;gap:16px;align-items:start}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+
+  .side{display:flex;flex-direction:column;gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  .card .ct{font-size:0.68rem;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;
+    color:var(--text-3);padding:14px 16px 9px;display:flex;align-items:center;gap:8px}
+  .card .ct svg{width:13px;height:13px;fill:var(--text-3)}
+
+  .views{padding:2px 8px 8px}
+  .view{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;
+    color:var(--text-2);font-size:0.85rem;transition:background .12s,color .12s}
+  .view:hover{background:var(--hover)}
+  .view.on{background:var(--accent-soft);color:var(--text)}
+  .view.on .badge{background:rgba(91,155,255,0.22);color:#bcd5ff}
+  .view .nm{flex:1}
+  .view .badge{font-size:0.72rem;font-variant-numeric:tabular-nums;background:var(--panel-2);
+    color:var(--text-2);border-radius:20px;padding:1px 8px;min-width:24px;text-align:center}
+
+  .ov{padding:4px 16px 14px;display:flex;flex-direction:column;gap:13px}
+  .ovrow{display:flex;align-items:center;gap:10px;font-size:0.84rem}
+  .ovrow .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .ovrow .lb{color:var(--text-2)}
+  .ovrow .track{flex:1;height:5px;border-radius:3px;background:var(--panel-2);overflow:hidden}
+  .ovrow .track i{display:block;height:100%;border-radius:3px}
+  .ovrow .n{font-variant-numeric:tabular-nums;color:var(--text);min-width:26px;text-align:right;font-weight:550}
+
+  .stat{padding:4px 16px 16px;display:flex;flex-direction:column;gap:11px}
+  .statrow{display:flex;align-items:baseline;justify-content:space-between;font-size:0.84rem}
+  .statrow .k{color:var(--text-2)} .statrow .v{font-weight:600;font-variant-numeric:tabular-nums}
+  .statrow .v small{color:var(--text-3);font-weight:400}
+
+  /* table */
+  .tablecard{overflow:hidden}
+  .twrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:760px}
+  thead th{text-align:left;font-size:0.66rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;
+    color:var(--text-3);padding:13px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+  th.cbx,td.cbx{width:38px;padding-left:16px}
+  tbody td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr{transition:background .1s}
+  tbody tr:hover{background:var(--hover)}
+  tbody tr:last-child td{border-bottom:none}
+  input[type=checkbox]{appearance:none;width:15px;height:15px;border-radius:4px;border:1.5px solid var(--line-2);
+    background:var(--panel-2);cursor:pointer;position:relative;top:2px}
+  input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+
+  .pill{display:inline-block;font-size:0.72rem;font-weight:600;letter-spacing:0.01em;
+    padding:3px 10px;border-radius:20px}
+  .pill.hi{color:var(--hi);background:var(--hi-bg)}
+  .pill.md{color:var(--md);background:var(--md-bg)}
+  .pill.lo{color:var(--lo);background:var(--lo-bg)}
+  .st{display:inline-flex;align-items:center;gap:6px;font-size:0.76rem;font-weight:550}
+  .st .d{width:6px;height:6px;border-radius:50%}
+  .st.active{color:var(--md)} .st.active .d{background:var(--md);box-shadow:0 0 0 3px var(--md-bg)}
+  .st.contained{color:var(--ok)} .st.contained .d{background:var(--ok)}
+
+  .threat{display:flex;align-items:center;gap:11px}
+  .shield{width:26px;height:26px;border-radius:7px;background:var(--panel-2);display:grid;place-items:center;flex:none}
+  .shield svg{width:14px;height:14px;fill:var(--text-3)}
+  .threat.crit .shield svg{fill:var(--hi)}
+  .threat .ip{font-family:var(--mono);font-size:0.85rem;color:var(--text);font-weight:550}
+  .threat .sub{font-size:0.75rem;color:var(--text-3);margin-top:1px}
+  .tgt .nm{color:var(--text);font-weight:500}
+  .tgt .sub{font-size:0.75rem;color:var(--text-3);margin-top:1px}
+  td.time{color:var(--text-2);font-size:0.82rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .loc{display:flex;align-items:center;gap:9px}
+  .av{width:28px;height:28px;border-radius:50%;background:var(--panel-2);display:grid;place-items:center;
+    font-size:0.95rem;flex:none;box-shadow:0 0 0 1px var(--line) inset}
+  .av.lan{font-size:0.6rem;font-weight:700;letter-spacing:0.03em;color:var(--text-2)}
+  .loc .cn{font-size:0.82rem;color:var(--text-2)}
+  .empty{text-align:center;color:var(--text-3);padding:34px;font-size:0.86rem}
+  .note{padding:11px 16px;color:var(--text-3);font-size:0.72rem;border-top:1px solid var(--line)}
+
+  /* top locations (sidebar) */
+  .locs{padding:4px 14px 14px;display:flex;flex-direction:column;gap:9px}
+  .locrow{display:flex;align-items:center;gap:9px;font-size:0.82rem}
+  .locrow .fl{width:20px;text-align:center;font-size:1rem}
+  .locrow .cn{color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:92px}
+  .locrow .track{flex:1;height:5px;border-radius:3px;background:var(--panel-2);overflow:hidden}
+  .locrow .track i{display:block;height:100%;background:var(--accent);border-radius:3px}
+  .locrow .n{font-variant-numeric:tabular-nums;color:var(--text);min-width:20px;text-align:right}
+
+  /* monitored devices + connection feed (bottom row) */
+  .bottom{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px}
+  @media(max-width:880px){.bottom{grid-template-columns:1fr}}
+  .devs{padding:8px 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:520px){.devs{grid-template-columns:1fr}}
+  .dev{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:11px 12px;border-left:3px solid var(--text-3)}
+  .dev.probed{border-left-color:var(--md)} .dev.tampered{border-left-color:var(--hi)}
+  .dev .dn{font-size:0.82rem;font-weight:600}
+  .dev .dk{font-size:0.72rem;color:var(--text-3);margin-top:1px}
+  .dev .ds{display:flex;gap:12px;margin-top:8px;font-size:0.72rem;color:var(--text-2);font-variant-numeric:tabular-nums}
+  .dev .ds b{color:var(--text)} .dev .ds .w b{color:var(--hi)}
+  .feed{padding:4px 14px 12px}
+  .feedrow{display:flex;align-items:center;gap:9px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:0.8rem}
+  .feedrow:last-child{border-bottom:none}
+  .feedrow .fip{font-family:var(--mono);color:var(--text);font-size:0.78rem}
+  .feedrow .ar{color:var(--text-3)}
+  .feedrow .fhp{color:var(--accent);font-weight:550}
+  .feedrow .ft{margin-left:auto;color:var(--text-3);font-size:0.72rem;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="head">
+    <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5l8-3z"/></svg></div>
+    <div>
+      <h1>Honeynet Threat Console</h1>
+      <div class="sub">Active Defence for Industrial Environments</div>
+    </div>
+    <div class="right">
+      <span class="live"><span class="d"></span>Live &middot; streaming</span>
+      <span class="clock" id="clock">--:--:--</span>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <label class="search">
+      <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.3 14l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0010 2zm0 2a6 6 0 110 12 6 6 0 010-12z"/></svg>
+      <input id="search" placeholder="Search by IP, country, or honeypot…" autocomplete="off">
+    </label>
+    <span class="result" id="result">—</span>
+  </div>
+
+  <div class="grid">
+    <aside class="side">
+      <div class="card">
+        <div class="ct"><svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 012 2v16l-9-4-9 4V5a2 2 0 012-2z"/></svg>Saved views</div>
+        <div class="views" id="views"></div>
+      </div>
+      <div class="card">
+        <div class="ct"><svg viewBox="0 0 24 24"><path d="M3 3v18h18v-2H5V3H3zm4 12h2v4H7v-4zm4-6h2v10h-2V9zm4 3h2v7h-2v-7z"/></svg>Threat overview</div>
+        <div class="ov" id="overview"></div>
+      </div>
+      <div class="card">
+        <div class="ct">Top locations</div>
+        <div class="locs" id="locations"></div>
+      </div>
+      <div class="card">
+        <div class="ct">Fleet status</div>
+        <div class="stat" id="stat"></div>
+      </div>
+    </aside>
+
+    <main class="card tablecard">
+      <div class="twrap">
+        <table>
+          <thead><tr>
+            <th class="cbx"><input type="checkbox" disabled></th>
+            <th>Severity</th><th>Threat</th><th>Target</th><th>Last seen</th><th>Status</th><th>Location</th>
+          </tr></thead>
+          <tbody id="rows"><tr><td class="empty" colspan="7">connecting…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="note" id="note"></div>
+    </main>
+  </div>
+
+  <div class="bottom">
+    <div class="card">
+      <div class="ct">Monitored devices &mdash; the fleet</div>
+      <div class="devs" id="fleet"></div>
+    </div>
+    <div class="card">
+      <div class="ct">Live connection feed</div>
+      <div class="feed" id="feed"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const S = { data:null, view:"all", q:"" };
+function esc(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+function severity(a){ return a.targets>=5?"crit":a.targets>=2?"elev":"recon"; }
+const SEV={crit:{cls:"hi",label:"Critical"},elev:{cls:"md",label:"Elevated"},recon:{cls:"lo",label:"Recon"}};
+
+function recent(ts){ const t=Date.parse(ts); return !isNaN(t) && (Date.now()-t) < 300000; }
+function relTime(ts){
+  const t=Date.parse(ts); if(isNaN(t)) return "—";
+  let s=Math.max(0,Math.floor((Date.now()-t)/1000));
+  if(s<60) return s+"s ago"; if(s<3600) return Math.floor(s/60)+"m ago";
+  if(s<86400) return Math.floor(s/3600)+"h ago"; return Math.floor(s/86400)+"d ago";
+}
+
+function passView(a){
+  if(S.view==="crit") return severity(a)==="crit";
+  if(S.view==="enum") return a.targets>=4;
+  if(S.view==="foreign") return !a.is_local;
+  if(S.view==="local") return a.is_local;
+  return true;
+}
+function passSearch(a){
+  if(!S.q) return true; const q=S.q.toLowerCase();
+  return a.ip.toLowerCase().includes(q) || (a.country||"").toLowerCase().includes(q)
+      || a.honeypots.join(" ").toLowerCase().includes(q);
+}
+
+function draw(){
+  const d=S.data; if(!d) return;
+  const all=d.attackers;
+  const counts={all:all.length,
+    crit:all.filter(a=>severity(a)==="crit").length,
+    enum:all.filter(a=>a.targets>=4).length,
+    foreign:all.filter(a=>!a.is_local).length,
+    local:all.filter(a=>a.is_local).length};
+
+  const views=[["all","All attackers",counts.all],["crit","Critical",counts.crit],
+    ["enum","Enumerating",counts.enum],["foreign","Foreign IPs",counts.foreign],
+    ["local","Local network",counts.local]];
+  document.getElementById("views").innerHTML=views.map(([id,nm,n])=>
+    `<div class="view ${S.view===id?"on":""}" data-v="${id}"><span class="nm">${nm}</span><span class="badge">${n}</span></div>`).join("");
+  document.querySelectorAll(".view").forEach(el=>el.onclick=()=>{S.view=el.dataset.v;draw();});
+
+  const sev={crit:counts.crit,elev:all.filter(a=>severity(a)==="elev").length,recon:all.filter(a=>severity(a)==="recon").length};
+  const mx=Math.max(1,sev.crit,sev.elev,sev.recon);
+  document.getElementById("overview").innerHTML=[
+    ["Critical","var(--hi)",sev.crit],["Elevated","var(--md)",sev.elev],["Recon","var(--lo)",sev.recon]
+  ].map(([lb,c,n])=>`<div class="ovrow"><span class="dot" style="background:${c}"></span>`+
+    `<span class="lb">${lb}</span><span class="track"><i style="width:${Math.round(100*n/mx)}%;background:${c}"></i></span>`+
+    `<span class="n">${n}</span></div>`).join("");
+
+  const k=d.kpis;
+  document.getElementById("stat").innerHTML=
+    `<div class="statrow"><span class="k">Honeypots probed</span><span class="v">${k.active}<small> / ${k.honeypots}</small></span></div>`+
+    `<div class="statrow"><span class="k">Connections</span><span class="v">${k.connections}</span></div>`+
+    `<div class="statrow"><span class="k">Liveness probes</span><span class="v">${k.probes||0}</span></div>`+
+    `<div class="statrow"><span class="k">Countries</span><span class="v">${k.countries}</span></div>`+
+    `<div class="statrow"><span class="k">Tamper writes</span><span class="v" style="color:var(--hi)">${k.writes}</span></div>`;
+
+  const shown=all.filter(a=>passView(a)&&passSearch(a));
+  document.getElementById("result").textContent=`${shown.length} of ${all.length} attackers`;
+
+  const tb=document.getElementById("rows");
+  if(!shown.length){ tb.innerHTML='<tr><td class="empty" colspan="7">no matching attackers</td></tr>'; }
+  else{
+    tb.innerHTML=shown.map(a=>{
+      const s=SEV[severity(a)]; const crit=severity(a)==="crit";
+      const active=recent(a.last);
+      const tgt = a.honeypots[0] + (a.honeypots.length>1?` +${a.honeypots.length-1}`:"");
+      const av = a.is_local ? '<span class="av lan">LAN</span>'
+                            : `<span class="av">${a.flag||"🌐"}</span>`;
+      const cn = a.is_local ? "Local network" : esc(a.country||"");
+      return `<tr>
+        <td class="cbx"><input type="checkbox"></td>
+        <td><span class="pill ${s.cls}">${s.label}</span></td>
+        <td><div class="threat ${crit?"crit":""}">
+          <span class="shield"><svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5l8-3z"/></svg></span>
+          <div><div class="ip">${esc(a.ip)}</div><div class="sub">${a.connections} connections &middot; ${a.targets} targets</div></div>
+        </div></td>
+        <td class="tgt"><div class="nm">${esc(tgt)}</div><div class="sub">${a.targets} device${a.targets>1?"s":""} hit</div></td>
+        <td class="time">${relTime(a.last)}</td>
+        <td><span class="st ${active?"active":"contained"}"><span class="d"></span>${active?"Active":"Contained"}</span></td>
+        <td><div class="loc">${av}<span class="cn">${cn}</span></div></td>
+      </tr>`;
+    }).join("");
+  }
+  // top locations (sidebar)
+  const tl=d.top_locations||[]; const lmax=Math.max(1,...tl.map(l=>l.count));
+  document.getElementById("locations").innerHTML = tl.length ? tl.map(l=>
+    `<div class="locrow"><span class="fl">${l.flag||"🏠"}</span><span class="cn">${esc(l.country)}</span>`+
+    `<span class="track"><i style="width:${Math.round(100*l.count/lmax)}%"></i></span>`+
+    `<span class="n">${l.count}</span></div>`).join("")
+    : '<div style="color:var(--text-3);font-size:0.8rem">no data</div>';
+
+  // monitored devices (the fleet)
+  document.getElementById("fleet").innerHTML = d.fleet.map(h=>{
+    const cls = h.writes>0?"tampered":(h.conns>0?"probed":"");
+    return `<div class="dev ${cls}"><div class="dn">${esc(h.name)}</div><div class="dk">${esc(h.kind)}</div>`+
+      `<div class="ds"><span>conns <b>${h.conns}</b></span><span>probes <b>${h.probes||0}</b></span>`+
+      `<span class="w">writes <b>${h.writes}</b></span></div></div>`;
+  }).join("");
+
+  // live connection feed
+  const fe=d.feed||[];
+  document.getElementById("feed").innerHTML = fe.length ? fe.map(c=>
+    `<div class="feedrow"><span class="fip">${esc(c.ip)}</span><span class="ar">&rarr;</span>`+
+    `<span class="fhp">${esc(c.honeypot)}</span><span class="ft">${relTime(c.ts)}</span></div>`).join("")
+    : '<div style="color:var(--text-3);font-size:0.8rem;padding:6px">waiting for connections…</div>';
+
+  document.getElementById("note").textContent =
+    "Lab traffic is local (127.0.0.1). Foreign IPs are example data to demonstrate geolocation; on the isolated network these are real attackers.";
+}
+
+function render(d){ S.data=d; draw(); }
+document.getElementById("search").addEventListener("input",e=>{S.q=e.target.value;draw();});
+function clock(){document.getElementById("clock").textContent=new Date().toLocaleTimeString();}
+setInterval(clock,1000);clock();
+
+fetch("/api/threat",{cache:"no-store"}).then(r=>r.json()).then(render).catch(()=>{});
+const es=new EventSource("/api/stream");
+es.onmessage=e=>{ try{ render(JSON.parse(e.data)); }catch(err){} };
+</script>
+</body>
+</html>

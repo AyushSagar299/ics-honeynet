@@ -1,0 +1,3 @@
+# The live Modbus decoy (and the static baseline)
+pymodbus==3.6.9
+paho-mqtt==2.1.0

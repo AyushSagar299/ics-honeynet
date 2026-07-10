@@ -1,0 +1,4 @@
+# Pinned so the code keeps working. pymodbus 3.13 broke the classic
+# server API (renamed classes, context no longer subscriptable), so we
+# stay on the last comfortable classic-API release used by ICS tutorials.
+pymodbus==3.6.9

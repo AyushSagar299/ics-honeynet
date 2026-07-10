@@ -1,0 +1,15 @@
+# This tells Grafana about our InfluxDB automatically, so you don't have to
+# add it by hand. It uses the Flux query language (InfluxDB 2.x).
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    jsonData:
+      version: Flux
+      organization: honeynet
+      defaultBucket: plant
+    secureJsonData:
+      token: dev-token-please-change

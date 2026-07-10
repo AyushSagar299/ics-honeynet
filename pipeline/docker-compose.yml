@@ -1,0 +1,46 @@
+# The live-pipeline infrastructure for Month 2:
+#   mosquitto -> the MQTT broker in the middle
+#   influxdb  -> stores the twin's values over time
+#   grafana   -> draws the live dashboard (already connected to influxdb)
+#
+# These all have native arm64 images, so no --platform is needed on the M1.
+# Bring them up with:  docker compose up -d
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      - "8086:8086"
+    environment:
+      # first-run setup so we don't have to click through the UI.
+      # this token is only for the local lab -- not a real secret.
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: admin12345
+      DOCKER_INFLUXDB_INIT_ORG: honeynet
+      DOCKER_INFLUXDB_INIT_BUCKET: plant
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: dev-token-please-change
+    volumes:
+      - influxdata:/var/lib/influxdb2
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"      # so you can just open the dashboard
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - influxdb
+
+volumes:
+  influxdata: {}
