@@ -1,7 +1,6 @@
 # ICS Honeynet
 
-My master's internship project for Cuatroochenta. It is a honeypot system for
-industrial control systems (ICS).
+It is a honeypot system for industrial control systems (ICS).
 
 The problem it deals with is that most ICS honeypots are easy to spot, because their
 sensor values never change. A skilled attacker reads a few registers, sees that nothing

@@ -5,7 +5,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-06-10 — Phase 0 + Phase 1 scaffold
+## Phase 0 + Phase 1 scaffold
 
 - **Did:** Verified Mac setup (Docker, Python, git, nmap installed; zeek + Wireshark
   still to do for Phase 2). Created the `ics-honeynet` folder structure and wrote all
@@ -17,7 +17,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-07 — Stage A: water-tank PLC works
+## Stage A: water-tank PLC works
 
 - **Did:** Wrote `real-lab/process-simulator/tank_plc.py` — a water-tank physics
   simulator + Modbus TCP server in one file — plus `read_test.py`. Ran it and a
@@ -33,7 +33,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-07 — Part 2: passive DPI listener works (Scapy + Zeek)
+## Part 2: passive DPI listener works (Scapy + Zeek)
 
 - **Did:** Built `listener/scapy/dpi_listener.py` (passive, read-only Modbus DPI
   that prints reads/writes in plain English), `make_sample_pcap.py` (generates a
@@ -51,7 +51,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-07 — Part 3 (Month 2): digital twin + live pipeline works
+## Part 3 (Month 2): digital twin + live pipeline works
 
 - **Did:** Built `bridge/bridge.py` (pymodbus client polling the PLC 1x/s ->
   publishes JSON to MQTT `plant/telemetry`), `twin/twin.py` (MQTT subscriber that
@@ -71,7 +71,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-07 — Part 4 (Month 3 core): live decoy vs static baseline
+## Part 4 (Month 3 core): live decoy vs static baseline
 
 - **Did:** Built `honeynet/modbus-decoy/decoy.py` — a live Modbus decoy: a
   pymodbus server whose registers are fed from the twin over MQTT, with a custom
@@ -92,7 +92,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-07 — Part 5 (Month 3): attacker + logging
+## Part 5 (Month 3): attacker + logging
 
 - **Did:** Wrote the 5 attack scripts (`attacker/scripts/`): recon (nmap),
   enumeration, unauthorised write, HMI brute-force, replay/robustness, plus
@@ -115,7 +115,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-07 — Part 6 (Month 4): analysis, project, clean repo — CORE COMPLETE
+## Part 6 (Month 4): analysis, project, clean repo — CORE COMPLETE
 
 - **Did:** Wrote `analysis/collect_data.py` (records real fidelity + believability
   data from the running lab) and `analysis/analysis.py` (the 3 charts + optional
@@ -133,7 +133,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-07 — Honeynet Operations Console (live dashboard)
+## Honeynet Operations Console (live dashboard)
 
 - **Did:** Built `honeynet/monitor/` — a Flask dashboard (console.py + index.html)
   that reads the 3 decoys over Modbus and tails the honeypot JSON logs, showing
@@ -153,7 +153,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-07 — Honeypot FLEET + threat-intel dashboard + dataset replayer
+## Honeypot FLEET + threat-intel dashboard + dataset replayer
 
 - **Did:** Built `honeynet/fleet/` — a real honeynet. `devices.py` = 8 fake
   devices (tank, boiler, pump station, chlorine, power meter, HVAC, conveyor,
@@ -176,7 +176,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-07 — Attacker geolocation on the threat dashboard
+## Attacker geolocation on the threat dashboard
 
 - **Did:** Added `honeynet/fleet/geo.py` (offline IP->country via `geoip2fast` —
   no key, no internet, localhost/private -> "Local"). Enriched the dashboard:
@@ -194,7 +194,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-07 — Real-time PUSH: dashboard now streams via SSE
+## Real-time PUSH: dashboard now streams via SSE
 
 - **Did:** Replaced the threat dashboard's 2s polling with **Server-Sent Events**.
   `dashboard.py` gained `/api/stream` (a generator that yields `data: <state>` only
@@ -212,7 +212,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-07 — Believability measurement: does the fake factory look real?
+## Believability measurement: does the fake factory look real?
 
 - **Did:** Built two evaluation tools. `analysis/believability_test.py` fingerprints
   a device (values-change, device-identity, plausible values, bad-request handling,
@@ -233,7 +233,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-07 — Threat dashboard redesign (looks like a real SOC product)
+## Threat dashboard redesign (looks like a real SOC product)
 
 - **Did:** User said the old dashboard "looks made by AI". Rebuilt
   `honeynet/fleet/dashboard.html` to a refined SIEM aesthetic (reference: a real
@@ -282,7 +282,7 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-10 — Resilience / self-pentest: "how hard to crack?"
+## Resilience / self-pentest: "how hard to crack?"
 
 - **Did:** Built `analysis/resilience_test.py` — reframes "how easy to attack" for a
   honeypot: it's meant to be EASY to interact with (the lure) but HARD to crash or
@@ -298,12 +298,10 @@ Three lines per session: what I did, what I learned, what's next.
 
 ---
 
-## 2026-07-10 — Real ICS traffic: the 4SICS capture (tutor-shared references)
+## Real ICS traffic: the 4SICS capture (tutor-shared references)
 
-- **Did:** Tutor shared 4 links (Grid-Watch, NETRESEC PCAP4SICS, GhostPLC, Gridwolf) —
-  3 already in the roadmap; the new one is real ICS pcaps. Downloaded the smallest
-  4SICS capture (25 MB real conference-lab ICS traffic) to
-  `listener/scapy/4sics-geeklounge.pcap` and ran Zeek on it (logs in
+- **Did:** Downloaded the 4SICS capture to `listener/scapy/4sics-geeklounge.pcap`
+  and ran Zeek on it (logs in
   `listener/zeek/logs-4sics/`). Finding: **real Siemens S7** traffic — a real S7 PLC
   at 10.10.10.10 hit **7,199 times** by one attacker (10.10.10.30), ~95% probing
   (RSTO) + ~5% real sessions (S1). This REAL attacker pattern validates the design:

@@ -22,9 +22,15 @@ venv/
 
 # Editor
 .vscode/
+.claude/
 *.swp
 
 # Secrets / local env
 .env
 *.key
 *.pem
+
+# Local demo helpers (not part of the project)
+demo.sh
+stop_demo.sh
+live_view.py
