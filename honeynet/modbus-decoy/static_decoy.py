@@ -7,7 +7,7 @@ fair -- under the same attack, the live decoy's values drift like a real plant,
 while this one's values are frozen. A skilled attacker reads a few registers,
 sees nothing ever moves, and knows within minutes it is a trap.
 
-This is the control we measure the live decoy against in the thesis.
+This is the control we measure the live decoy against in the project.
 """
 
 import os

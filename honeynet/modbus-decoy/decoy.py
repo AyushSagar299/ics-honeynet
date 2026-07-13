@@ -5,7 +5,7 @@ It looks exactly like the real tank PLC: same registers, same protocol, same
 port. But its values are not from a real process -- they are copied from the
 digital twin over MQTT. So an attacker who reads this decoy sees the real
 plant's live, moving values and cannot easily tell it is a trap. That is the
-heart of the thesis.
+heart of the project.
 
 Safety -- this is a ONE-WAY mirror:
   * values flow twin -> decoy only.

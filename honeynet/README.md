@@ -15,7 +15,7 @@ project is **how** the main decoy gets its data.
 All three speak Modbus on the **same register map**, so an attacker meets three
 "identical" devices — but only the live one behaves like a real plant.
 
-## The result (this is the thesis evidence)
+## The result (this is the project evidence)
 Reading each device twice, a few seconds apart:
 ```
 real PLC        MOVING   (level 76.0% -> 77.5%)

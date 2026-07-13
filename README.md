@@ -23,7 +23,7 @@ Everything runs on macOS with Docker.
   login, and a fleet of 8 fake devices with a threat dashboard
 - `attacker/` - the five attack scripts I use to test the decoys
 - `analysis/` - the result charts and the tools I wrote to measure how believable it is
-- `docs/` - the thesis and the device-profiling note
+- `docs/` - the project write-up and the device-profiling note
 
 ## How to run it
 
@@ -67,7 +67,7 @@ The main results are in `analysis/` (fig1 to fig3):
 - the live decoy's values move over time while the static one stays frozen
 - the honeypot logs caught all of the Modbus reads/writes and the login attempts
 
-The thesis is in `docs/thesis.md` and the analysis notebook is `analysis/analysis.ipynb`.
+The write-up is in `docs/report.md` and the analysis notebook is `analysis/analysis.ipynb`.
 
 ## Notes
 

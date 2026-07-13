@@ -63,7 +63,7 @@ from(bucket: "plant")
 ```
 
 Set the dashboard to auto-refresh (top right, e.g. every 5s) and watch it track
-the PLC live, about one second behind. **That one-second delay is a thesis result
+the PLC live, about one second behind. **That one-second delay is a project result
 — measure it.**
 
 ## Stop

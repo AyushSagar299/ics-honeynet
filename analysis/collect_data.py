@@ -1,5 +1,5 @@
 """
-collect_data.py -- gather the measurement data for the thesis charts.
+collect_data.py -- gather the measurement data for the project charts.
 
 Run this while the pipeline + decoys are running (real PLC, bridge, twin, live
 decoy, static decoy). It records two CSV files:

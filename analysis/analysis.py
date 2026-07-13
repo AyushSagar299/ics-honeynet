@@ -1,7 +1,7 @@
 # %% [markdown]
 # # ICS Honeynet — Results
 #
-# The three result charts for the thesis, from real data measured on the lab:
+# The three result charts for the project, from real data measured on the lab:
 # 1. **Twin fidelity** — does the decoy (fed by the twin) track the real PLC?
 # 2. **Believability** — does the live decoy move while the static one is frozen?
 # 3. **Detection coverage** — what did the honeypot logs capture?

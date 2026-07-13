@@ -110,26 +110,26 @@ Three lines per session: what I did, what I learned, what's next.
   use `-sT` + modbus-discover instead. On host test ports nmap can't label it
   'modbus' (only on 502).
 - **Next:** Month 4 — measure results (twin fidelity/delay, live-vs-static,
-  detection coverage) in JupyterLab, and write the thesis. Optional: containerise
+  detection coverage) in JupyterLab, and write the project. Optional: containerise
   everything onto the 3 isolated networks; add S7/OPC-UA decoys.
 
 ---
 
-## 2026-07-07 — Part 6 (Month 4): analysis, thesis, clean repo — CORE COMPLETE
+## 2026-07-07 — Part 6 (Month 4): analysis, project, clean repo — CORE COMPLETE
 
 - **Did:** Wrote `analysis/collect_data.py` (records real fidelity + believability
   data from the running lab) and `analysis/analysis.py` (the 3 charts + optional
   KMeans), converted to an executed `analysis/analysis.ipynb`. Measured REAL
   results: twin fidelity mean error **0.11%**; live decoy std **2.6** vs static
   **0.0**; detection coverage **100%** (101 reads, 2 writes, 16 logins captured).
-  Wrote the thesis draft `docs/thesis.md` (full structure, filled from the build),
+  Wrote the project draft `docs/report.md` (full structure, filled from the build),
   rewrote the top-level README, and added a pinned top-level `requirements.txt`.
 - **Learned:** Python 3.14 needs the LATEST matplotlib/pandas/sklearn (old pins had
   no 3.14 wheels) -> matplotlib 3.11, pandas 3.0, sklearn 1.9. jupytext + nbconvert
   turn a `# %%` .py into an executed notebook with embedded charts.
 - **Next:** commit everything (a whole project is unversioned). Optional polish:
   containerise onto the 3 networks, S7/OPC-UA decoys + HoneyPLC, run full ELK on a
-  bigger machine, grow attack dataset for ML. Then finish writing the thesis prose.
+  bigger machine, grow attack dataset for ML. Then finish writing the project prose.
 
 ---
 
@@ -223,7 +223,7 @@ Three lines per session: what I did, what I learned, what's next.
   (a bare pymodbus server doesn't answer Read Device Identification with a
   vendor/product; a real PLC does).
 - **Learned:** this is the honest "profile the real, then mirror it" evidence for
-  the thesis. Closing the single gap = attach a `ModbusDeviceIdentification`
+  the project. Closing the single gap = attach a `ModbusDeviceIdentification`
   (vendor/product/version) to the server via the `identity=` arg -> would make it
   9/9. Custom decoys are strong on live values, weak on banners; Conpot is the
   reverse; the ideal decoy has both.

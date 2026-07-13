@@ -55,7 +55,7 @@ only listens) and then read back offline with two tools: `dpi_listener.py`
 
 ---
 
-## Security observations (relevant to the thesis)
+## Security observations (relevant to the project)
 
 - **No authentication, no encryption.** Modbus has none. The write to register 10
   was accepted with no login and no check — anyone who can reach port 502 could

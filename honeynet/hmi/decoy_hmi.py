@@ -4,7 +4,7 @@ decoy_hmi.py -- a fake HMI login page (a honeypot).
 It looks like the login screen of a plant operator panel. There is no real
 account behind it -- it always rejects the login. But it LOGS every attempt
 (username, password, source IP), so a credential brute-force attack against it
-is fully recorded. That log is evidence for the thesis.
+is fully recorded. That log is evidence for the project.
 """
 
 import os

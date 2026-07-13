@@ -4,7 +4,7 @@ Scenario 2 -- Protocol enumeration.
 Read the Modbus holding registers a few times. This is how an attacker learns
 what the device is doing -- and, crucially, whether the values MOVE. A real
 plant (and our live decoy) drifts over time; a fake honeypot stays frozen.
-This is the test our whole thesis is about.
+This is the test our whole project is about.
 
   python read_registers.py <host> <port>
 """

@@ -2,7 +2,7 @@
 demo_attackers.py -- append EXAMPLE global attacker connections to the fleet log.
 
 In the lab all real traffic is localhost, which has no map location. To show the
-geolocation feature for the thesis, this writes example connections from public
+geolocation feature for the project, this writes example connections from public
 IPs around the world, so the dashboard's country view has something to show.
 
 These are clearly DEMO entries. Real captures (localhost, or real IPs on a

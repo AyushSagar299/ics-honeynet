@@ -26,7 +26,7 @@ Scenario 3  write register 0 = 1234 accepted, and logged by the decoy
 Scenario 4  16 login attempts, all logged with source IP
 Scenario 5  decoy survived a malformed frame and kept answering
 ```
-That Scenario-2 contrast is the core evidence for the thesis.
+That Scenario-2 contrast is the core evidence for the project.
 
 ## The isolated network (the real deployment)
 In the full lab there are three Docker networks. The attacker sits on its own

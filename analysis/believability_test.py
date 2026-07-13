@@ -3,7 +3,7 @@ believability_test.py -- how convincing is a honeypot?
 
 Fingerprint a device the way an attacker would, and score how "real" it looks.
 Run it against your decoy and against a static honeypot to compare -- the gap is
-the evidence for the thesis.
+the evidence for the project.
 
   python believability_test.py <host> <port> [label]
 """
