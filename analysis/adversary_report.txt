@@ -1,0 +1,31 @@
+================================================================
+  ADVERSARY BOT  --  automated attack + honeypot grading
+================================================================
+  Target:   127.0.0.1:5101
+  Baseline: 127.0.0.1:5022  (a plain static honeypot, for contrast)
+
+[1] RECON        port open, Modbus answering .............. OK (device reachable)
+[2] BELIEVABILITY  read 12x -> 12 distinct readings, level stdev 1.39
+     verdict: LOOKS LIVE  (a real plant drifts) -> deception holds
+     baseline static: 1 distinct, stdev 0.00  (frozen -> obviously fake)
+[3] FINGERPRINT   tried to detect a honeypot from behaviour (latency stdev 0.8 ms)
+     -> could NOT confirm it is fake from its behaviour. Deception holds.
+[4] AGGRESSION    unauthorised write of 1234 -> accepted  (Modbus has no auth; this should be LOGGED by the target)
+[5] RESILIENCE    malformed frame: survived
+                  flood 249 connections: survived, still answering
+
+----------------------------------------------------------------
+  SCORES
+    Deception (believability) ..........  72 / 100
+    Detection resistance ...............  85 / 100
+    Resilience (survives attack) ....... 100 / 100
+    OVERALL GRADE ...................... A   (avg 86/100)
+================================================================
+  How to read this:
+  I attacked this device like a real adversary. A GOOD honeynet
+  behaves like a live plant (high deception), cannot be crashed
+  (high resilience), and does not give itself away (high detection
+  resistance). A WEAK project scores low on deception (frozen values)
+  or resilience (it crashes). Every action above should appear in
+  the defender's dashboard/logs -- that is your detection coverage.
+================================================================

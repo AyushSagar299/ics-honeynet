@@ -1,5 +1,5 @@
 # Active Defence for Industrial Environments
-## A honeypot fed with live values from a digital twin
+## A honeypot fed with live values from a Digital Shadow
 
 Ayush Sagar — Cuatroochenta — Master's internship
 
@@ -11,7 +11,7 @@ watch attackers, but the usual ICS honeypots are easy to recognise because they 
 fixed values that never change. An attacker reads a few registers, sees that nothing
 moves, and concludes it is a trap. This project tries to remove that weakness. I run a
 small simulated process (a water tank) and serve it over Modbus, I keep a live copy of it
-in a digital twin, and I feed the twin's live values into decoy devices. The decoys then
+in a Digital Shadow, and I feed the shadow's live values into decoy devices. The decoys then
 show the same moving values as the real process while the real equipment is never
 exposed. I evaluate the system by attacking it and comparing the live decoy against a
 static one. The live decoy follows the real plant to within about 0.11%, its values move
@@ -39,7 +39,7 @@ and the data that is collected has little value.
 
 ### 1.3 Contribution
 
-The claim of this work is that a honeypot fed with live values from a digital twin is much
+The claim of this work is that a honeypot fed with live values from a Digital Shadow is much
 harder to fingerprint as fake than a static honeypot, while the real equipment is never
 exposed to the attacker.
 
@@ -47,8 +47,8 @@ exposed to the attacker.
 
 1. Build a realistic ICS process and serve it over a real industrial protocol.
 2. Profile it passively with deep packet inspection, without disturbing it.
-3. Build a live digital twin of the process.
-4. Build decoys fed by the twin, and a static decoy to compare against.
+3. Build a live Digital Shadow of the process.
+4. Build decoys fed by the shadow, and a static decoy to compare against.
 5. Attack the system and measure fidelity, believability and detection.
 
 ## 2. State of the art
@@ -61,9 +61,13 @@ For ICS honeypots the two well known ones are Conpot, a general ICS honeypot, an
 which imitates a Siemens S7 PLC and came from a 2020 research paper. Both are useful but
 they mostly serve static data, which is the weakness this project is about.
 
-A digital twin is a live software copy of a real system that is kept in sync with it.
-Twins are normally used for monitoring and prediction. Using one to feed a honeypot is the
-combination that, as far as I found, is not done by existing tools, and that is the gap
+A digital shadow is a live software copy of a real system that is kept in sync with it, but
+with the data flowing only one way, from the real system into the copy. This is different from
+a digital twin, which is two-way and can send commands back to the real equipment (the
+twin / shadow / model distinction comes from Kritzinger et al.). For a honeypot this one-way
+property is essential: it is what makes the copy safe to expose, because nothing an attacker
+does on the copy can travel back to the real plant. Using a one-way shadow to feed a honeypot
+is the combination that, as far as I found, is not done by existing tools, and that is the gap
 this project fills.
 
 ## 3. Methodology
@@ -75,9 +79,9 @@ were:
 1. Build the process (a water-tank simulator) and serve it over Modbus. The first version
    is a plain pymodbus server; the real-PLC version uses OpenPLC.
 2. Capture and read the traffic passively with Scapy and Zeek to profile the devices.
-3. Poll the PLC and publish the values over MQTT into a digital twin, store them in InfluxDB
+3. Poll the PLC and publish the values over MQTT into a Digital Shadow, store them in InfluxDB
    and show them in Grafana.
-4. Feed the twin's live state into the decoys, and set up a static decoy and Conpot as
+4. Feed the shadow's live state into the decoys, and set up a static decoy and Conpot as
    baselines.
 5. Attack the decoys and measure the results.
 
@@ -90,13 +94,13 @@ attacker can never reach the real plant.
 
 There are three isolated networks: the real lab (the PLC and the process), the honeynet
 (the decoys), and the attacker. The attacker can reach the honeynet but has no path to the
-real lab. The data only flows one way, from the real plant to the twin to the decoys, so a
+real lab. The data only flows one way, from the real plant to the shadow to the decoys, so a
 write to a decoy can never reach the real PLC.
 
 ### 4.2 The data pipeline
 
 The pipeline is: tank_plc, then the bridge which polls it once a second, then MQTT
-(Mosquitto), then the twin, then InfluxDB and Grafana. The twin's state is also sent to the
+(Mosquitto), then the shadow, then InfluxDB and Grafana. The shadow's state is also sent to the
 decoys. The passive listener (Scapy and Zeek) and the honeypot logs run alongside.
 
 ### 4.3 The process and the registers
@@ -116,10 +120,10 @@ The system is written in plain Python. The main parts are:
   plain text, and Zeek which produces JSON logs. The device profiling is written up in
   `docs/device-profiling-note.md`.
 - The bridge (`bridge/bridge.py`): a pymodbus client that publishes to MQTT with paho-mqtt.
-- The digital twin (`twin/twin.py`): an MQTT subscriber that holds the live state, does a
+- The Digital Shadow (`twin/twin.py`): an MQTT subscriber that holds the live state, does a
   simple expected-value check for anomalies, and writes to InfluxDB.
 - The decoys (`honeynet/`): the live decoy is a pymodbus server whose registers are fed by
-  the twin, and it logs every read and write. There is also a static decoy and Conpot as
+  the shadow, and it logs every read and write. There is also a static decoy and Conpot as
   baselines, and a fake HMI login page that records the passwords that are tried.
 - The attacker scripts (`attacker/`): recon, enumeration, unauthorised write, brute force,
   and a replay/robustness test.
@@ -136,11 +140,11 @@ A few things I learned by actually running it, which are worth noting:
 
 The three main experiments are in `analysis/analysis.ipynb`.
 
-### 6.1 Twin fidelity
+### 6.1 Shadow fidelity
 
-Reading the real PLC and the twin-fed decoy at the same time, the decoy follows the real
+Reading the real PLC and the shadow-fed decoy at the same time, the decoy follows the real
 plant with a mean level error of about 0.11%, and the lag is smaller than the 0.5 second
-sampling interval. The two curves are almost on top of each other (Figure 1). So the twin
+sampling interval. The two curves are almost on top of each other (Figure 1). So the shadow
 is a faithful copy of the plant.
 
 ### 6.2 Believability, live versus static
@@ -166,7 +170,7 @@ this would separate attacker types more clearly.
 
 ## 7. Conclusions
 
-The system supports the claim. A decoy fed by the digital twin passes the test an attacker
+The system supports the claim. A decoy fed by the Digital Shadow passes the test an attacker
 actually uses, which is whether the values move, while the static honeypot gives itself
 away. At the same time the real equipment is never exposed, and the honeypot records the
 full application-layer attack.
@@ -192,6 +196,6 @@ To be formatted in the required citation style. The main sources are:
   Systems", ACM CCS 2020.
 - MITRE ATT&CK for ICS, MITRE Corporation.
 - 4SICS ICS lab network captures, NETRESEC.
-- Digital twin surveys (for the definition and use of digital twins).
+- Digital twin and digital shadow surveys (Kritzinger et al.), for the twin / shadow / model taxonomy.
 - iTrust SWaT / WADI datasets, Singapore University of Technology and Design (for the
   anomaly-detection part).

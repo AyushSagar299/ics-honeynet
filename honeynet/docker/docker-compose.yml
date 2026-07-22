@@ -1,0 +1,28 @@
+# Containerized decoy with one-way network isolation.
+#   - the real plant lives on an INTERNAL OT network (no host access, no route out)
+#   - the decoy lives on a separate attacker-facing honeynet network
+#   - the two share NO network, so the decoy CANNOT reach the plant
+#
+#   docker compose up -d --build      then attack the decoy at 127.0.0.1:5021
+#   docker compose down               to stop
+services:
+  plant:
+    build: .
+    command: python plant.py
+    container_name: ot-plant
+    networks: [ot_net]
+    restart: unless-stopped
+
+  decoy:
+    build: .
+    command: python decoy.py
+    container_name: honeynet-decoy
+    networks: [honeynet]
+    ports:
+      - "5021:502"        # the attacker reaches the decoy here
+    restart: unless-stopped
+
+networks:
+  ot_net:
+    internal: true         # the OT side: no external connectivity at all
+  honeynet:                # the attacker-facing side
