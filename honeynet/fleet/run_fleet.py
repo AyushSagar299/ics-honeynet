@@ -73,16 +73,54 @@ class FleetStore(ModbusSlaveContext):
         super().setValues(3, 0, values)
 
 
+BOOLEAN_SIGNALS = ("pump", "burner", "pump_a", "pump_b")
+
+
 def simulate(store, device):
-    """Update this device's registers every second so the values look alive."""
+    """Drive each register with a stochastic, physics-aware model instead of a
+    clock-locked sine, so the values cannot be curve-fitted or predicted and
+    booleans behave like real 0/1 actuators.
+
+    Each analog signal follows a mean-reverting random walk (it drifts around its
+    normal value with realistic, size-scaled noise). Booleans flip on random dwell
+    times, and the actuators nudge the main process value (cause and effect). The
+    generator is seeded from os.urandom, so every device and every restart differs
+    and nothing is a function of the wall clock -- there is no sine to fit."""
+    rng = random.Random(os.urandom(16))
+    sigs = device["signals"]
+    state = []
+    for (label, base, swing, period) in sigs:
+        if label in BOOLEAN_SIGNALS:
+            state.append(rng.random() < 0.5)
+        else:
+            state.append(base + rng.uniform(-0.3, 0.3) * swing)
+    dwell = [rng.randint(20, 200) for _ in sigs]   # ticks a boolean holds its state
+    dt = 0.25                                       # fast, off-grid tick (no 1s pattern)
+
     while True:
-        t = time.time()
+        push = 0.0
+        for i, (label, base, swing, period) in enumerate(sigs):
+            if label in BOOLEAN_SIGNALS:
+                if dwell[i] <= 0:
+                    state[i] = not state[i]
+                    dwell[i] = rng.randint(20, 200)
+                dwell[i] -= 1
+                push += 1.0 if state[i] else -1.0
+
         regs = []
-        for (label, base, swing, period) in device["signals"]:
-            v = base + swing * math.sin(2 * math.pi * t / period) + random.uniform(-0.2, 0.2)
-            regs.append(max(0, int(v * 10)))       # x10, like the rest of the project
+        for i, (label, base, swing, period) in enumerate(sigs):
+            if label in BOOLEAN_SIGNALS:
+                regs.append(int(bool(state[i])))          # a real 0/1 actuator
+                continue
+            theta = dt / max(period * 0.15, 1.0)          # how strongly it returns to normal
+            sigma = max(0.02, 0.06 * swing)               # noise scaled to this signal's range
+            drive = 0.05 * swing * push if i == 0 else 0.0  # actuators move the main value
+            state[i] += theta * (base - state[i]) + drive + rng.gauss(0, sigma)
+            lo, hi = max(0.0, base - 1.6 * swing), base + 1.6 * swing
+            state[i] = min(hi, max(lo, state[i]))
+            regs.append(max(0, int(state[i] * 10)))
         store.feed(regs)
-        time.sleep(1)
+        time.sleep(dt)
 
 
 def run_backend(device):

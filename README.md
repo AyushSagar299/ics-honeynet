@@ -5,7 +5,7 @@ It is a honeypot system for industrial control systems (ICS).
 The problem it deals with is that most ICS honeypots are easy to spot, because their
 sensor values never change. A skilled attacker reads a few registers, sees that nothing
 moves, and knows it is a trap. To get around this I run a small simulated plant (a water
-tank), keep a live copy of it called a digital twin, and feed those live values into the
+tank), keep a live copy of it called a Digital Shadow, and feed those live values into the
 decoy devices. The decoys then show moving values like a real plant, so the attacker
 cannot easily tell they are fake, and the real equipment is never touched.
 
@@ -16,7 +16,7 @@ Everything runs on macOS with Docker.
 - `real-lab/` - the water-tank PLC (a Modbus server) that produces the live values
 - `listener/` - a passive listener (Scapy) that reads the Modbus traffic, plus Zeek
 - `bridge/` - reads the PLC once a second and publishes the values to MQTT
-- `twin/` - the digital twin: keeps the live state and checks for anomalies
+- `twin/` - the Digital Shadow: keeps the live state and checks for anomalies
 - `pipeline/` - the Docker services (Mosquitto, InfluxDB, Grafana)
 - `honeynet/` - the decoys: the live one, a static one for comparison, Conpot, a fake HMI
   login, and a fleet of 8 fake devices with a threat dashboard
@@ -40,7 +40,7 @@ Start the Docker services (MQTT, InfluxDB, Grafana):
 cd pipeline && docker compose up -d && cd ..
 ```
 
-Start the plant and the twin, each in its own terminal:
+Start the plant and the Digital Shadow, each in its own terminal:
 
 ```bash
 .venv/bin/python real-lab/process-simulator/tank_plc.py

@@ -39,7 +39,7 @@ TICK = 1.0  # seconds between physics steps
 # easy to read and there are no global variables to worry about.
 tank = {
     "level": 50.0,   # percent full
-    "temp": 22.0,    # degrees C
+    "temp": float(os.environ.get("TANK_TEMP0", "22.0")),  # deg C (start warm with TANK_TEMP0)
     "pump": 0,       # inlet pump   0/1
     "heater": 0,     # heater       0/1
     "valve": 1,      # outlet valve 0/1 (kept open, so the tank always drains a bit)

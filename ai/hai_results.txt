@@ -1,0 +1,14 @@
+====================================================================================
+  HAI ANOMALY DETECTION  (REAL DATA: train on the normal file, test on the attack file)
+====================================================================================
+  train: train1.csv  (216001 rows, all normal)
+  test : test1.csv  (43201 rows, 629 attack)   features: 57
+------------------------------------------------------------------------------------
+  Model                 PR-AUC      F1   F1adj  Recall    FA/day  delay(s)  cover
+  Isolation Forest        0.05    0.10    0.57    0.10    1162.0        75   3/5
+  One-Class SVM           0.27    0.27    0.31    0.84    5487.9         7   5/5
+  PCA reconstruction      0.28    0.30    0.35    0.84    4717.9         7   5/5
+====================================================================================
+  Real HAI data. The train file is all-normal, so the detector never saw the attacks
+  before test time -- this is the honest, non-circular result for the thesis.
+====================================================================================

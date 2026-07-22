@@ -1,0 +1,14 @@
+========================================================================
+  ATTACKER ACTIVITY MAPPED TO MITRE ATT&CK FOR ICS
+========================================================================
+  source logs: 103 connections, 116 recorded actions
+------------------------------------------------------------------------
+  Technique Name                              Tactic                 seen
+  T0801     Monitor Process State             Collection              111
+  T0836     Modify Parameter                  Impair Process Control    5
+  T0855     Unauthorized Command Message      Impair Process Control    5
+  T0814     Denial of Service                 Inhibit Response Function    1
+========================================================================
+  Every attacker action on a decoy is now tagged with a standard
+  ATT&CK-for-ICS technique -- ready for the thesis and the SOC.
+========================================================================

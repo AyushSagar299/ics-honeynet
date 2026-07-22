@@ -1,0 +1,15 @@
+==================================================================================
+  SWaT-STYLE ANOMALY DETECTION  (train on NORMAL only, no leakage, raw features)
+==================================================================================
+  file: swat_like.csv   features: 11   train(normal): 11000   test: 9000   attacks in test: 1150
+----------------------------------------------------------------------------------
+  Model                 PR-AUC      F1   F1adj  Recall    FA/day  delay(s)  cover
+  Isolation Forest        0.17    0.12    0.62    0.08    2851.2       214   2/4
+  One-Class SVM           0.28    0.23    0.23    1.00   72537.6         0   4/4
+  PCA reconstruction      0.80    0.81    0.98    0.70     432.0        20   4/4
+==================================================================================
+  PR-AUC is the headline metric (attacks are rare). F1adj is point-adjusted F1
+  (a whole attack segment counts as caught if ANY point in it is flagged); it is
+  more generous, so it is shown next to the raw F1 for honesty. FA/day and the
+  detection delay are what an operator actually cares about.
+==================================================================================
