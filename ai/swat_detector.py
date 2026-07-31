@@ -12,7 +12,7 @@ Unlike the earlier demo detector, this one is honest and non-circular:
     detection delay, and per-attack coverage.
 It compares Isolation Forest, One-Class SVM and PCA reconstruction.
 
-  python swat_detector.py [path-to-csv]
+  .venv/bin/python swat_detector.py [path-to-csv]   (windows: .venv\\Scripts\\python.exe)
   (defaults to ai/swat_like.csv, a stand-in until the real SWaT arrives)
 """
 
@@ -105,7 +105,7 @@ def evaluate(name, train_score, test_score, yte, out):
 def main():
     if not os.path.exists(CSV):
         print("dataset not found:", CSV)
-        print("generate the stand-in first:  python make_swat_like.py")
+        print("generate the stand-in first: ", sys.executable, "make_swat_like.py")
         return
     X, y, cols = load(CSV)
     first_atk = int(np.argmax(y == 1)) if (y == 1).any() else len(y)
@@ -149,7 +149,7 @@ def main():
     out("  more generous, so it is shown next to the raw F1 for honesty. FA/day and the")
     out("  detection delay are what an operator actually cares about.")
     out("=" * 82)
-    with open(os.path.join(HERE, "swat_results.txt"), "w", encoding="utf-8") as f:
+    with open(os.path.join(HERE, "swat_results.txt"), "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")
 
 

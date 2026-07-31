@@ -8,7 +8,7 @@ It plays a full attacker campaign against one target device and decides:
   - Does it stay reachable and keep answering while I attack it?
 Then it prints a scorecard with an overall grade and writes a report file.
 
-  python adversary_bot.py [host] [port] [baseline_port]
+  .venv/bin/python adversary_bot.py [host] [port] [baseline_port]   (windows: .venv/Scripts/python.exe)
   default: 127.0.0.1 5101   baseline 5022
 
 Idea: a strong honeynet is EASY to attack (it is a lure) but HARD to detect
@@ -106,15 +106,16 @@ def flood(h, p, n=250):
     frame = modbus_read_frame()
     sent = 0
     for _ in range(n):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(0.3)
             s.connect((h, p))
             s.sendall(frame)
             sent += 1
-            s.close()
         except OSError:
             pass
+        finally:
+            s.close()          # close it even if the connect failed, or we leak handles
     return sent
 
 
@@ -150,7 +151,8 @@ def main():
     # [1] RECON
     if not is_alive(host, port):
         out(f"[1] RECON        target {host}:{port} is NOT answering. Is the fleet running?")
-        out("    -> start it with:  .\\demo.bat   (or run_fleet.py)")
+        starter = ".\\demo.bat" if sys.platform.startswith("win") else "./demo.sh"
+        out(f"    -> start it with:  {starter}   (or run_fleet.py)")
         return
     out("[1] RECON        port open, Modbus answering .............. OK (device reachable)")
 
@@ -243,11 +245,12 @@ def main():
 
     # write report
     report_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "analysis")
+    report = os.path.join(report_dir, "adversary_report.txt")
     try:
         os.makedirs(report_dir, exist_ok=True)
-        with open(os.path.join(report_dir, "adversary_report.txt"), "w", encoding="utf-8") as f:
+        with open(report, "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
-        print(f"\n[report saved: analysis/adversary_report.txt]", flush=True)
+        print(f"\n[report saved: {report}]", flush=True)
     except OSError:
         pass
 

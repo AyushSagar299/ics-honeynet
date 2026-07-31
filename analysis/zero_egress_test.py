@@ -17,7 +17,7 @@ How it works:
 
 In a real deployment, set OT_HOST / OT_PORT to the real plant's address.
 
-  python zero_egress_test.py         (start the fleet first, e.g. demo.bat)
+  .venv/bin/python analysis/zero_egress_test.py    (start the fleet first: ./demo.sh, or demo.bat on windows)
 """
 
 import os
@@ -29,18 +29,25 @@ import threading
 from pymodbus.client import ModbusTcpClient
 
 OT_HOST = os.environ.get("OT_HOST", "127.0.0.1")
-OT_PORT = int(os.environ.get("OT_PORT", "5900"))          # stands for the real OT network
+OT_PORT = int(os.environ.get("OT_PORT", "5999"))          # stands for the real OT network (5900 is screen sharing on macos)
 DECOY_HOST = os.environ.get("DECOY_HOST", "127.0.0.1")
 DECOY_PORT = int(os.environ.get("DECOY_PORT", "5101"))    # a decoy the attacker owns
 
 hits = []          # every connection the canary receives
 _run = True
+bind_error = None  # set if the canary port is already taken
 
 
 def canary():
+    global bind_error
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind((OT_HOST, OT_PORT))
+    try:
+        s.bind((OT_HOST, OT_PORT))
+    except OSError as e:
+        bind_error = e
+        s.close()
+        return
     s.listen(50)
     s.settimeout(0.5)
     while _run:
@@ -84,14 +91,15 @@ def attack_decoy():
         c.close()
     frame = read_frame()
     for _ in range(100):                    # connection flood
+        s = socket.socket()
         try:
-            s = socket.socket()
             s.settimeout(0.3)
             s.connect((DECOY_HOST, DECOY_PORT))
             s.sendall(frame)
-            s.close()
         except OSError:
             pass
+        finally:
+            s.close()          # close it even if the connect failed, or we leak handles
     try:                                    # a malformed frame
         s = socket.create_connection((DECOY_HOST, DECOY_PORT), timeout=2)
         s.sendall(b"\x00\x01\x00\x00\x00\x06\x01\x99\xff\xff\x00\x99")
@@ -111,6 +119,12 @@ def main():
     threading.Thread(target=canary, daemon=True).start()
     time.sleep(0.5)
 
+    if bind_error:
+        print(f"  [!] could not start the canary on {OT_HOST}:{OT_PORT}: {bind_error}")
+        print("      something else is already on that port. set OT_PORT to a free one.")
+        _run = False
+        return
+
     # 1. control -- prove the canary can detect egress
     try:
         socket.create_connection((OT_HOST, OT_PORT), timeout=2).close()
@@ -129,7 +143,8 @@ def main():
 
     # 2. full attack against the decoy
     if not is_alive(DECOY_HOST, DECOY_PORT):
-        print(f"  [!] decoy {DECOY_HOST}:{DECOY_PORT} not answering -- start the fleet first (.\\demo.bat)")
+        starter = ".\\demo.bat" if os.name == "nt" else "./demo.sh"
+        print(f"  [!] decoy {DECOY_HOST}:{DECOY_PORT} not answering -- start the fleet first ({starter})")
         _run = False
         return
     print("  [attack] full attack on the decoy: reads, writes, flood, malformed frame ...")

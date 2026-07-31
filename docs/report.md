@@ -85,8 +85,8 @@ were:
    baselines.
 5. Attack the decoys and measure the results.
 
-Everything runs in Docker on a MacBook. The design uses three separate networks so that the
-attacker can never reach the real plant.
+Everything runs in Docker, on a MacBook and also on a Windows laptop. The design uses three
+separate networks so that the attacker can never reach the real plant.
 
 ## 4. System design
 
@@ -127,6 +127,11 @@ The system is written in plain Python. The main parts are:
   baselines, and a fake HMI login page that records the passwords that are tried.
 - The attacker scripts (`attacker/`): recon, enumeration, unauthorised write, brute force,
   and a replay/robustness test.
+- The anomaly detection (`ai/`): Isolation Forest, One-Class SVM and a PCA reconstruction,
+  trained on normal data only with a temporal split, on SWaT/HAI-format data.
+- The safety checks (`analysis/zero_egress_test.py`, `analysis/attack_mitre_map.py`): one
+  proves nothing reaches the plant, the other maps what the attacker did onto MITRE ATT&CK
+  for ICS.
 
 A few things I learned by actually running it, which are worth noting:
 
@@ -167,6 +172,16 @@ the honeypot log.
 As a smaller extra experiment I used KMeans to group attacker sessions by behaviour, which
 separates scanners from tamperers from brute-forcers (Figure 4). With more real attack data
 this would separate attacker types more clearly.
+
+### 6.5 Process-anomaly detection
+
+The `ai/` layer is evaluated separately, because it works on the process telemetry rather
+than on the decoy traffic. The models are trained on normal data only and tested on a later
+window, so they never see the attacks beforehand. The numbers are in `ai/swat_results.txt`
+(SWaT-format data) and `ai/hai_results.txt` (the real HAI files). On the SWaT-format data
+the PCA reconstruction is clearly the best of the three (PR-AUC 0.80), and on the real HAI
+data all three are much weaker (PR-AUC 0.05 to 0.28), which is the honest result and shows
+how much harder real plant data is.
 
 ## 7. Conclusions
 

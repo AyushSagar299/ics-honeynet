@@ -10,5 +10,5 @@
   PCA reconstruction      0.28    0.30    0.35    0.84    4717.9         7   5/5
 ====================================================================================
   Real HAI data. The train file is all-normal, so the detector never saw the attacks
-  before test time -- this is the honest, non-circular result for the thesis.
+  before test time -- this is the honest, non-circular result for the report.
 ====================================================================================
