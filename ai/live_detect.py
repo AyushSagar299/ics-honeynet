@@ -5,9 +5,10 @@ It loads the trained model (ai/detector.joblib), reads the plant's telemetry
 every second, and prints NORMAL or ANOMALY with a score. In another terminal,
 do an attacker write and watch the brain flag it:
 
-   .venv\\Scripts\\python.exe attacker\\scripts\\write_register.py 127.0.0.1 5020
+   .venv/bin/python attacker/scripts/write_register.py 127.0.0.1 5020
+   (on windows: .venv\\Scripts\\python.exe attacker\\scripts\\write_register.py 127.0.0.1 5020)
 
-  python live_detect.py [host] [port]     default 127.0.0.1 5020  (the real plant)
+  .venv/bin/python live_detect.py [host] [port]   default 127.0.0.1 5020  (the real plant)
 """
 
 import os
@@ -22,7 +23,17 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 host = sys.argv[1] if len(sys.argv) > 1 else "127.0.0.1"
 port = int(sys.argv[2]) if len(sys.argv) > 2 else 5020
 
-bundle = joblib.load(os.path.join(HERE, "detector.joblib"))
+# the hints we print have to match the os we are actually running on
+PY = r".venv\Scripts\python.exe" if os.name == "nt" else ".venv/bin/python"
+PLANT = os.path.join("real-lab", "process-simulator", "tank_plc.py")
+ATTACK = os.path.join("attacker", "scripts", "write_register.py")
+
+MODEL = os.path.join(HERE, "detector.joblib")
+if not os.path.exists(MODEL):
+    print("no trained model at", MODEL)
+    print("train it first:  " + PY + " ai/smart_detector.py")
+    sys.exit(1)
+bundle = joblib.load(MODEL)
 model, scaler = bundle["model"], bundle["scaler"]
 
 
@@ -40,12 +51,12 @@ def features(r):
 client = ModbusTcpClient(host, port=port, timeout=2)
 if not client.connect():
     print(f"cannot connect to {host}:{port} -- start the plant first:")
-    print(r"   .venv\Scripts\python.exe real-lab\process-simulator\tank_plc.py")
+    print(f"   {PY} {PLANT}")
     sys.exit(1)
 
 print(f"SMART detector watching {host}:{port} live.  Ctrl+C to stop.")
 print(f"attack it in another terminal and watch it flag:")
-print(rf"   .venv\Scripts\python.exe attacker\scripts\write_register.py {host} {port}")
+print(f"   {PY} {ATTACK} {host} {port}")
 print()
 try:
     while True:

@@ -19,7 +19,7 @@ services:
     container_name: honeynet-decoy
     networks: [honeynet]
     ports:
-      - "5021:502"        # the attacker reaches the decoy here
+      - "127.0.0.1:5021:502"        # the attacker reaches the decoy here
     restart: unless-stopped
 
 networks:

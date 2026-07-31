@@ -5,21 +5,21 @@
   Baseline: 127.0.0.1:5022  (a plain static honeypot, for contrast)
 
 [1] RECON        port open, Modbus answering .............. OK (device reachable)
-[2] BELIEVABILITY  read 12x -> 12 distinct readings, level stdev 1.39
+[2] BELIEVABILITY  read 12x -> 12 distinct readings, level stdev 5.42
      verdict: LOOKS LIVE  (a real plant drifts) -> deception holds
      baseline static: 1 distinct, stdev 0.00  (frozen -> obviously fake)
-[3] FINGERPRINT   tried to detect a honeypot from behaviour (latency stdev 0.8 ms)
+[3] FINGERPRINT   tried to detect a honeypot from behaviour (latency stdev 0.7 ms)
      -> could NOT confirm it is fake from its behaviour. Deception holds.
 [4] AGGRESSION    unauthorised write of 1234 -> accepted  (Modbus has no auth; this should be LOGGED by the target)
 [5] RESILIENCE    malformed frame: survived
-                  flood 249 connections: survived, still answering
+                  flood 250 connections: survived, still answering
 
 ----------------------------------------------------------------
   SCORES
-    Deception (believability) ..........  72 / 100
+    Deception (believability) .......... 100 / 100
     Detection resistance ...............  85 / 100
     Resilience (survives attack) ....... 100 / 100
-    OVERALL GRADE ...................... A   (avg 86/100)
+    OVERALL GRADE ...................... A   (avg 95/100)
 ================================================================
   How to read this:
   I attacked this device like a real adversary. A GOOD honeynet

@@ -4,9 +4,9 @@ attack_mitre_map.py -- map recorded attacker activity to MITRE ATT&CK for ICS.
 It reads the honeynet's logs and tags each kind of attacker action with the
 MITRE ATT&CK for ICS technique it corresponds to, then prints a summary and
 saves a report. This turns raw logs into the standard vocabulary that OT
-security teams (and thesis examiners) expect.
+security teams expect.
 
-  python attack_mitre_map.py        (run an attack first so the logs exist)
+  .venv/bin/python analysis/attack_mitre_map.py        (run an attack first so the logs exist)
 """
 
 import os
@@ -31,13 +31,14 @@ DOS = ("T0814", "Denial of Service", "Inhibit Response Function")
 def load(path):
     rows = []
     if os.path.exists(path):
-        for line in open(path, encoding="utf-8"):
-            line = line.strip()
-            if line:
-                try:
-                    rows.append(json.loads(line))
-                except ValueError:
-                    pass
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        rows.append(json.loads(line))
+                    except ValueError:
+                        pass
     return rows
 
 
@@ -77,7 +78,7 @@ def main():
             out(f"  {tid:10}{name:34}{tactic:22}{cnt:>5}")
     out("=" * 72)
     out("  Every attacker action on a decoy is now tagged with a standard")
-    out("  ATT&CK-for-ICS technique -- ready for the thesis and the SOC.")
+    out("  ATT&CK-for-ICS technique -- ready for the report and the SOC.")
     out("=" * 72)
 
     with open(os.path.join(HERE, "attack_mitre_map.txt"), "w", encoding="utf-8") as f:

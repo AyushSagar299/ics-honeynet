@@ -9,7 +9,8 @@ tank), keep a live copy of it called a Digital Shadow, and feed those live value
 decoy devices. The decoys then show moving values like a real plant, so the attacker
 cannot easily tell they are fake, and the real equipment is never touched.
 
-Everything runs on macOS with Docker.
+It runs on macOS with Docker, and it also runs on Windows. The demo helpers are there
+for both.
 
 ## Folder layout
 
@@ -19,20 +20,40 @@ Everything runs on macOS with Docker.
 - `twin/` - the Digital Shadow: keeps the live state and checks for anomalies
 - `pipeline/` - the Docker services (Mosquitto, InfluxDB, Grafana)
 - `honeynet/` - the decoys: the live one, a static one for comparison, Conpot, a fake HMI
-  login, and a fleet of 8 fake devices with a threat dashboard
+  login, and a fleet of 8 fake devices with a threat dashboard. `honeynet/docker/` has the
+  Dockerfile and compose file for running a decoy in a container
 - `attacker/` - the five attack scripts I use to test the decoys
-- `analysis/` - the result charts and the tools I wrote to measure how believable it is
-- `docs/` - the project write-up and the device-profiling note
+- `ai/` - the process-anomaly detection layer (trained on normal data only)
+- `analysis/` - the result charts, the tools I wrote to measure how believable it is, the
+  zero-egress safety test and the MITRE ATT&CK map
+- `docs/` - the project write-up, the device-profiling note, the conceptual framing and the
+  one-way safety invariant
+
+`adversary_bot.py` and `live_view.py` sit at the top level, one drives an attack session
+against the decoys and the other shows the live values in the terminal.
 
 ## How to run it
 
-Setup (once):
+The commands below use `.venv/bin/python`, which is the macOS and Linux path. On Windows
+the same scripts are run with `.venv\Scripts\python.exe` instead, nothing else changes.
+
+Setup (once), macOS or Linux:
 
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 brew install mosquitto zeek nmap
 ```
+
+Setup (once), Windows PowerShell:
+
+```powershell
+py -m venv .venv
+.venv\Scripts\pip.exe install -r requirements.txt
+```
+
+mosquitto, zeek and nmap have their own Windows installers. The fleet demo does not need
+them.
 
 Start the Docker services (MQTT, InfluxDB, Grafana):
 
@@ -58,6 +79,27 @@ Grafana is at http://localhost:3000. Then start the decoys and attack them:
 
 Each folder has its own README with more detail.
 
+## Quick demo
+
+This brings up the 8-device fleet, the static honeypot and the threat dashboard in one go,
+then opens http://localhost:8100.
+
+macOS or Linux:
+
+```bash
+bash demo.sh        # or ./demo.sh if it is executable
+bash stop_demo.sh   # when finished
+```
+
+Windows:
+
+```
+demo.bat
+stop_demo.bat
+```
+
+The .bat and .ps1 files are the Windows half of this, so do not remove or rename them.
+
 ## Results
 
 The main results are in `analysis/` (fig1 to fig3):
@@ -75,4 +117,5 @@ The write-up is in `docs/report.md` and the analysis notebook is `analysis/analy
 - pymodbus is pinned to 3.6.9 because version 3.13 changed the server API. See
   `requirements.txt`.
 - Port 502 needs sudo on a Mac, so on the laptop the servers use 5020, 5021 and 5022.
-  In Docker they map back to 502.
+  Windows does not need admin for 502 but I kept the same high ports there so the two
+  machines behave identically. In Docker they map back to 502.

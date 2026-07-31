@@ -40,8 +40,25 @@ misconfigured, the others still hold:
 ```
 
 ## How the invariant is verified
-The invariant is checked automatically by `analysis/zero_egress_test.py`. It runs
-a full attack against a decoy (reads, unauthorised writes, a malformed frame and a
-connection flood) and asserts that zero connections reach the OT endpoint. The test
-first performs a control step (a deliberate connection that IS detected), to prove
-it is not a blind test. Current result: PASS -- zero egress during a full attack.
+I check it automatically with `analysis/zero_egress_test.py`. It runs a full attack
+against a decoy (reads, unauthorised writes, a malformed frame and a connection
+flood) and asserts that zero connections reach the OT endpoint. It first does a
+control step, a deliberate connection that is detected, so I know it is not a blind
+test. Current result: PASS, zero egress during a full attack.
+
+To run it, macOS or Linux:
+
+```bash
+.venv/bin/python analysis/zero_egress_test.py
+```
+
+Windows PowerShell:
+
+```powershell
+.venv\Scripts\python.exe analysis\zero_egress_test.py
+```
+
+Start the fleet first (`bash demo.sh`, or `demo.bat` on Windows), otherwise it tells
+you the decoy is not answering and stops. It defaults to the local decoy on 5101 and
+a canary on 5999. To point it somewhere else set OT_HOST, OT_PORT, DECOY_HOST and
+DECOY_PORT first (`export VAR=...` in zsh, `$env:VAR="..."` in PowerShell).

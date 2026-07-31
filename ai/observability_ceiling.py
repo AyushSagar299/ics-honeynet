@@ -29,6 +29,7 @@ CSV = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "swat_like.csv")
 def main():
     if not os.path.exists(CSV):
         print("dataset not found:", CSV)
+        print("generate the stand-in first: ", sys.executable, "make_swat_like.py")
         return
     df = pd.read_csv(CSV)
     df.columns = [str(c).strip() for c in df.columns]

@@ -9,7 +9,8 @@ test half. The columns and the Normal/Attack label follow the SWaT layout, so
 swat_detector.py runs on this file exactly as it will on the real one.
 
   IMPORTANT: this is NOT real data. When your SWaT request is approved, run the
-  detector on the real CSV instead:  python swat_detector.py <real-SWaT.csv>
+  detector on the real CSV instead:  .venv/bin/python swat_detector.py <real-SWaT.csv>
+  (on windows that is .venv\\Scripts\\python.exe swat_detector.py <real-SWaT.csv>)
 """
 
 import os
@@ -62,5 +63,6 @@ for a, b, ci, kind in attacks:
 df = pd.DataFrame(X, columns=cols)
 df.insert(0, "Timestamp", t)
 df["Normal/Attack"] = np.where(y == 1, "Attack", "Normal")
-df.to_csv(os.path.join(HERE, "swat_like.csv"), index=False)
+# pin the line ending so the file comes out byte-identical on windows and macos
+df.to_csv(os.path.join(HERE, "swat_like.csv"), index=False, lineterminator="\n")
 print(f"wrote swat_like.csv: {N} rows, {int(y.sum())} attack rows, {len(cols)} sensors, {len(attacks)} attack windows")

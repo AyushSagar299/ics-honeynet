@@ -26,7 +26,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from swat_detector import evaluate  # reuse the exact metrics/reporting
 
-HAI = r"C:\Users\AyushAgar\.cache\kagglehub\datasets\icsdataset\hai-security-dataset\versions\10"
+# kagglehub caches under ~/.cache/kagglehub on windows, macos and linux alike, so
+# build the path from the home dir instead of hardcoding it. set HAI_DIR to override.
+HAI = os.environ.get("HAI_DIR") or os.path.join(
+    os.path.expanduser("~"), ".cache", "kagglehub", "datasets", "icsdataset",
+    "hai-security-dataset", "versions", "10")
 TRAIN = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HAI, "hai-21.03", "train1.csv")
 TEST = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HAI, "hai-21.03", "test1.csv")
 
@@ -43,6 +47,17 @@ def load(path):
 
 
 def main():
+    missing = [p for p in (TRAIN, TEST) if not os.path.exists(p)]
+    if missing:
+        print("HAI dataset not found, looked for:")
+        for p in missing:
+            print("  ", p)
+        print("get it with kagglehub:")
+        print("   pip install kagglehub")
+        print("   " + sys.executable +
+              " -c \"import kagglehub; print(kagglehub.dataset_download('icsdataset/hai-security-dataset'))\"")
+        print("or set HAI_DIR to the folder that contains hai-21.03/")
+        return
     print("loading HAI (this reads a large train file, ~10-20s) ...", flush=True)
     ftr, _ = load(TRAIN)                 # train file is all-normal
     fte, yte = load(TEST)
@@ -85,9 +100,9 @@ def main():
 
     out("=" * 84)
     out("  Real HAI data. The train file is all-normal, so the detector never saw the attacks")
-    out("  before test time -- this is the honest, non-circular result for the thesis.")
+    out("  before test time -- this is the honest, non-circular result for the report.")
     out("=" * 84)
-    with open(os.path.join(HERE, "hai_results.txt"), "w", encoding="utf-8") as f:
+    with open(os.path.join(HERE, "hai_results.txt"), "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")
 
 

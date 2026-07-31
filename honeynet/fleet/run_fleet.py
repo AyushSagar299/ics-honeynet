@@ -16,11 +16,14 @@ tagged with a real source IP. Writes:
 """
 
 import os
+import sys
 import json
-import math
 import time
 import random
+import signal
+import socket
 import asyncio
+import logging
 import threading
 import multiprocessing
 from datetime import datetime
@@ -34,10 +37,11 @@ from devices import DEVICES
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONN_LOG = os.environ.get("CONN_LOG", os.path.join(HERE, "connections.log"))
 ACTIONS_LOG = os.environ.get("ACTIONS_LOG", os.path.join(HERE, "actions.log"))
+BIND = os.environ.get("FLEET_BIND", "0.0.0.0")   # set FLEET_BIND=127.0.0.1 to keep it off the LAN
 
 
 def write_log(path, obj):
-    with open(path, "a") as f:
+    with open(path, "a", encoding="utf-8") as f:
         f.write(json.dumps(obj) + "\n")
 
 
@@ -114,7 +118,7 @@ def simulate(store, device):
                 continue
             theta = dt / max(period * 0.15, 1.0)          # how strongly it returns to normal
             sigma = max(0.02, 0.06 * swing)               # noise scaled to this signal's range
-            drive = 0.05 * swing * push if i == 0 else 0.0  # actuators move the main value
+            drive = theta * 0.8 * swing * push if i == 0 else 0.0  # actuators nudge the main value
             state[i] += theta * (base - state[i]) + drive + rng.gauss(0, sigma)
             lo, hi = max(0.0, base - 1.6 * swing), base + 1.6 * swing
             state[i] = min(hi, max(lo, state[i]))
@@ -131,6 +135,7 @@ def run_backend(device):
     the same identity. Separate processes (like separate real hardware) give each
     honeypot its own vendor / product / model, so they don't look like clones.
     """
+    logging.getLogger("pymodbus").setLevel(logging.CRITICAL)   # keep its chatter out of the demo output
     store = FleetStore(device["name"], hr=ModbusSequentialDataBlock(0, [0] * 100))
     context = ModbusServerContext(slaves=store, single=True)
 
@@ -186,21 +191,54 @@ def make_sensor(name, kind, internal_port):
     return handler
 
 
-async def run_sensors():
+async def run_sensors(live):
     """Run the public sensors: log every source IP and relay to the backends."""
     for d in DEVICES:
-        await asyncio.start_server(make_sensor(d["name"], d["kind"], d["internal"]), "0.0.0.0", d["public"])
+        await asyncio.start_server(make_sensor(d["name"], d["kind"], d["internal"]), BIND, d["public"])
     ports = f"{DEVICES[0]['public']}-{DEVICES[-1]['public']}"
-    print(f"Honeypot fleet up: {len(DEVICES)} devices on ports {ports}. Ctrl+C to stop.", flush=True)
+    print(f"Honeypot fleet up: {live} devices on ports {ports}. Ctrl+C to stop.", flush=True)
     await asyncio.Event().wait()
+
+
+def wait_for_backends(procs, timeout=10.0):
+    """Wait until each backend is really listening instead of guessing a sleep, and
+    give back the names of the ones that never came up."""
+    deadline = time.time() + timeout
+    dead = []
+    for d, p in zip(DEVICES, procs):
+        while True:
+            try:
+                socket.create_connection(("127.0.0.1", d["internal"]), 0.2).close()
+                break
+            except OSError:
+                # a backend whose port is already taken stays running but never
+                # listens, so watch the clock as well as the process
+                if not p.is_alive() or time.time() > deadline:
+                    dead.append(d["name"])
+                    break
+                time.sleep(0.1)
+    return dead
 
 
 if __name__ == "__main__":
     # each device backend runs in its OWN process -> its own device identity
+    backends = []
     for device in DEVICES:
-        multiprocessing.Process(target=run_backend, args=(device,), daemon=True).start()
-    time.sleep(2)   # let the backends bind before the sensors relay to them
+        p = multiprocessing.Process(target=run_backend, args=(device,), daemon=True)
+        p.start()
+        backends.append(p)
+
+    # on mac/linux stop_demo.sh kills us with SIGTERM. without this the backends
+    # get left behind still holding ports 6101-6108 and the next run can't bind
+    signal.signal(signal.SIGTERM, lambda sig, frm: sys.exit(0))
+
+    dead = wait_for_backends(backends)
+    if dead:
+        print("backends that did not start (is the port already in use?): " + ", ".join(dead), flush=True)
     try:
-        asyncio.run(run_sensors())
+        asyncio.run(run_sensors(len(DEVICES) - len(dead)))
     except KeyboardInterrupt:
         pass
+    finally:
+        for p in backends:
+            p.terminate()
