@@ -26,6 +26,10 @@ echo "starting the honeypot fleet (8 fake devices) ..."
 ( cd honeynet/fleet && exec "$PY" run_fleet.py ) >/tmp/honeynet_fleet.log 2>&1 &
 FLEET=$!
 
+echo "starting the OPC UA decoy on port 4840 (the second protocol) ..."
+"$PY" honeynet/opcua-decoy/decoy_opcua.py >/tmp/honeynet_opcua.log 2>&1 &
+OPCUA=$!
+
 echo "starting the static honeypot on port 5022 (for the comparison) ..."
 "$PY" honeynet/modbus-decoy/static_decoy.py >/tmp/honeynet_static.log 2>&1 &
 STATIC=$!
@@ -35,7 +39,7 @@ echo "starting the threat dashboard ..."
 DASH=$!
 
 # remember what we started so stop_demo.sh can stop exactly these
-printf '%s\n' "$FLEET" "$STATIC" "$DASH" > "$PIDFILE"
+printf '%s\n' "$FLEET" "$OPCUA" "$STATIC" "$DASH" > "$PIDFILE"
 
 sleep 6
 # put some example worldwide attacker IPs on the map so it is not empty
@@ -44,6 +48,14 @@ echo "adding example worldwide attacker IPs to the map ..."
 
 echo ""
 grep -q "fleet up" /tmp/honeynet_fleet.log && echo "  [ok] fleet up on ports 5101-5108" || echo "  [!!] fleet did not start -- see /tmp/honeynet_fleet.log"
+# the log line only means our own process got going, so check that something is
+# really sitting on 4840 as well, otherwise an old decoy still holding the port
+# would look like a good start
+if grep -q "decoy up" /tmp/honeynet_opcua.log && lsof -nP -iTCP:4840 -sTCP:LISTEN >/dev/null 2>&1; then
+  echo "  [ok] OPC UA decoy up on port 4840"
+else
+  echo "  [!!] OPC UA decoy did not start -- see /tmp/honeynet_opcua.log"
+fi
 grep -q "STATIC"   /tmp/honeynet_static.log && echo "  [ok] static honeypot up on port 5022" || echo "  [!!] static honeypot problem -- see /tmp/honeynet_static.log"
 # ask for the status code instead of just printing it, otherwise a refused
 # connection still looks like an [ok]
