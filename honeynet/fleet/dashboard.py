@@ -76,6 +76,14 @@ def build():
     # per-honeypot activity
     stats = {d["name"]: {"name": d["name"], "kind": d["kind"], "conns": 0,
                          "reads": 0, "writes": 0, "probes": 0, "last": None} for d in DEVICES}
+    # a honeypot that is not in devices.py -- the OPC UA decoy is its own program,
+    # not part of the modbus fleet -- would be dropped by the loops below, so add
+    # it here from what its own connection lines say it is
+    for c in conns:
+        name = c.get("honeypot")
+        if name and name not in stats:
+            stats[name] = {"name": name, "kind": c.get("kind", "honeypot"), "conns": 0,
+                           "reads": 0, "writes": 0, "probes": 0, "last": None}
     for a in acts:
         s = stats.get(a.get("honeypot"))
         if s:
@@ -92,7 +100,7 @@ def build():
     fleet = list(stats.values())
 
     feed = sorted(conns, key=lambda x: x["ts"], reverse=True)[:20]
-    kpis = {"honeypots": len(DEVICES),
+    kpis = {"honeypots": len(fleet),          # the fleet plus any decoy outside devices.py
             "active": sum(1 for s in fleet if s["conns"] > 0),
             "attackers": len(attackers),
             "countries": countries,

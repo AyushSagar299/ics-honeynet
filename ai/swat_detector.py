@@ -50,6 +50,20 @@ def load(path):
     y = df[label_col].map(to_y).to_numpy()
     feat = df.drop(columns=[label_col]).select_dtypes(include=[np.number])
     feat = feat.loc[:, feat.std(numeric_only=True) > 1e-9]
+
+    # drop any column that only ever counts upwards. a timestamp stored as a row
+    # number is not a sensor, and because the split is by time the test half sits
+    # entirely outside the training range, so that column turns into a ramp that
+    # says "everything is getting stranger" and the score it produces is really
+    # position in the file, not detection. i found this the hard way: with the
+    # counter left in, PCA scored 0.80 on the stand-in file, and dropping it took
+    # the same model on the same split down to 0.56. the 0.80 was the artefact.
+    # on the real SWaT file the timestamp is a date string and on HAI the time
+    # column is dropped by name, so there this finds nothing and changes nothing.
+    counters = [c for c in feat.columns if (feat[c].diff().dropna() > 0).all()]
+    if counters:
+        print(f"  (dropped counter column(s): {', '.join(counters)} -- row index, not a sensor)")
+        feat = feat.drop(columns=counters)
     return feat.to_numpy(dtype=float), y, list(feat.columns)
 
 

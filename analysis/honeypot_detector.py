@@ -6,11 +6,15 @@ every "tell" that gives it away. Use it on your own honeynet to find (and then
 fix) the weaknesses -- this is the adversarial side of the believability test.
 
   python honeypot_detector.py <host> <port> [sibling_port]
+
+OPCUA_PORT sets the port the second-protocol check probes (default 4840).
 """
 
+import os
 import sys
 import time
 import socket
+import struct
 import statistics
 
 from pymodbus.client import ModbusTcpClient
@@ -18,11 +22,36 @@ from pymodbus.client import ModbusTcpClient
 host = sys.argv[1] if len(sys.argv) > 1 else "127.0.0.1"
 port = int(sys.argv[2]) if len(sys.argv) > 2 else 5101
 sibling = int(sys.argv[3]) if len(sys.argv) > 3 else 5102
+opcua_port = int(os.environ.get("OPCUA_PORT", "4840"))
 
 
 def connect(p):
     c = ModbusTcpClient(host, port=p)
     return c if c.connect() else None
+
+
+def opcua_answers(p):
+    """Is a second protocol really there? Say hello in OPC UA and see if we get
+    the ACK back. I do the handshake rather than just checking the port is open
+    because anything at all could be sitting on 4840, and an attacker would want
+    to know it actually speaks OPC UA. Short timeouts so this never hangs when
+    nothing is listening."""
+    url = f"opc.tcp://{host}:{p}/plc/".encode()
+    # HEL body: version, recv buffer, send buffer, max message, max chunks, endpoint url
+    body = struct.pack("<IIIII", 0, 65536, 65536, 0, 0) + struct.pack("<I", len(url)) + url
+    hello = b"HELF" + struct.pack("<I", 8 + len(body)) + body
+    try:
+        s = socket.create_connection((host, p), timeout=1.5)
+    except OSError:
+        return False
+    try:
+        s.settimeout(1.5)
+        s.sendall(hello)
+        return s.recv(8)[:3] == b"ACK"
+    except OSError:
+        return False
+    finally:
+        s.close()
 
 
 def has_identity(c):
@@ -75,9 +104,13 @@ if c2:
     c2.close()
 
 # --- 4. how thin is the service surface? ---
-tells.append(("Only Modbus is exposed",
-              "the device answers Modbus but offers no web UI (80/8080) or SNMP (161) -- "
-              "most real PLCs also expose a management interface"))
+# this used to be hardcoded, which was cheating: it fired even after we added the
+# OPC UA decoy. Now we go and look.
+second_protocol = opcua_answers(opcua_port)
+if not second_protocol:
+    tells.append(("Only Modbus is exposed",
+                  "the device answers Modbus but offers no web UI (80/8080) or SNMP (161) -- "
+                  "most real PLCs also expose a management interface"))
 
 c.close()
 
@@ -89,6 +122,9 @@ else:
         print(f"  [TELL {i}] {t}")
         print(f"           {why}")
 print(f"\n  {len(tells)} tell(s) found.")
+if second_protocol:
+    print(f"  A second protocol (OPC UA) is also exposed on :{opcua_port}, so the thin "
+          "service surface does not give it away.")
 print("  Also expose a software honeypot but NOT tested here (network level, needs root):")
 print("   - OS fingerprint: nmap -O shows a PC OS, not an embedded PLC")
 print("   - MAC-address vendor and TCP/IP stack quirks don't match a real PLC")

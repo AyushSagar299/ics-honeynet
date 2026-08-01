@@ -18,4 +18,15 @@ if [ -f "$PIDFILE" ]; then
 else
   echo "nothing to stop (no pid file)."
 fi
+
+# an OPC UA decoy started by hand (or left over from a crashed run) is not in the
+# pid file, and it would keep sitting on port 4840 so the next demo.sh cannot bind
+# it. i ask lsof who holds the port and only kill it if it really is our decoy --
+# pgrep -f on its own also matches any shell that just mentions the script name.
+for pid in $(lsof -nP -iTCP:4840 -sTCP:LISTEN -t 2>/dev/null); do
+  if ps -o command= -p "$pid" 2>/dev/null | grep -q decoy_opcua.py; then
+    kill -TERM "$pid" 2>/dev/null && echo "stopped leftover opcua decoy $pid"
+  fi
+done
+
 echo "demo stopped."

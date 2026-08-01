@@ -51,6 +51,9 @@ A dataset helps most in the **analysis chapter** (a labelled set lets you test y
 anomaly detection against real attacks).
 
 ## Status / next
-Right now every honeypot speaks **Modbus** (a large Modbus fleet). The next step
-for a truly *mixed* fleet is adding an **S7** decoy (`python-snap7`, needs
-`brew install snap7`) and an **OPC UA** decoy (`asyncua`) behind their own sensors.
+Every honeypot in *this* folder speaks **Modbus**. The **OPC UA** decoy is now
+done as well (`../opcua-decoy/decoy_opcua.py`, port 4840): it runs its own
+`asyncua` server behind the same kind of sensor and appends to these same two
+logs, so the dashboard shows it (`OPCUA-PLC-09`) next to the Modbus ones. The
+next step for a truly *mixed* fleet is an **S7** decoy (`python-snap7`, needs
+`brew install snap7`) behind its own sensor.
