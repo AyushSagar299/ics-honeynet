@@ -145,6 +145,32 @@ stop_demo.bat
 
 The .bat and .ps1 files are the Windows half of this, so do not remove or rename them.
 
+### Bot swarm (stress test)
+
+Once the demo is up I can throw a swarm of bots at the fleet to see how it holds up. Start
+the demo first, then run the swarm, then stop the demo.
+
+macOS or Linux:
+
+```bash
+.venv/bin/python attacker/scripts/swarm.py 300
+```
+
+Windows:
+
+```powershell
+.venv\Scripts\python.exe attacker\scripts\swarm.py 300
+```
+
+The count is optional (default 300, clamped to 1-500). Every real connection only ever goes
+to 127.0.0.1, there is no host argument on purpose. It does two things. First a REAL load:
+it fires a few hundred bots at the fleet all at once, then reconnects to check the honeynet
+survived, and prints how many devices still answered. Second, to show what a live deployment
+would look like, it fills the threat dashboard with EXAMPLE global attacker IPs so the world
+map lights up. Those IPs are demonstration data, not real captures, and the printed summary
+keeps the two apart. If a manager asks: the survival result is real, the world map is a
+demonstration of what real attackers would look like on an isolated network.
+
 ## Results
 
 The main results are in `analysis/` (fig1 to fig3):
