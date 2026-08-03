@@ -1,0 +1,38 @@
+==================================================================================
+  ENSEMBLE ANOMALY DETECTION  (PCA + LSTM, z-scored on train, causal smoothing)
+==================================================================================
+  file: swat_like.csv   features: 10   train(normal): 11000   test: 9000   attacks in test: 1150
+  window: 30   hidden: 32   epochs: 20   seeds: 3   smoothing k: 10
+----------------------------------------------------------------------------------
+  Model                 PR-AUC      F1   F1adj  Recall    FA/day  delay(s)  cover
+  Isolation Forest        0.17    0.04    0.69    0.02     912.0       237   2/4
+  One-Class SVM           0.66    0.52    0.75    0.58    7459.2        65   4/4
+  PCA reconstruction      0.56    0.58    0.85    0.43     556.8        93   3/4
+  LSTM-AE (seed 0)        0.77    0.68    0.82    0.59    1488.0       116   3/4
+  LSTM-AE (seed 1)        0.70    0.62    0.84    0.48     844.8       148   3/4
+  LSTM-AE (seed 2)        0.72    0.60    0.84    0.47     921.6       152   3/4
+  Ensemble (avg)          0.73    0.65    0.83    0.54    1190.4       126   3/4
+  Ensemble (max)          0.74    0.65    0.83    0.53    1171.2       134   3/4
+  Ensemble avg sm10       0.75    0.65    0.82    0.54    1305.6       132   3/4
+  Ensemble max sm10       0.76    0.65    0.82    0.53    1296.0       134   3/4
+----------------------------------------------------------------------------------
+  smoothing sensitivity (avg ens, PR-AUC):  k1=0.73  k5=0.75  k10=0.75  k20=0.74  k30=0.73
+  point models: PCA 0.56   LSTM (seed-avg): 0.75   headline ensemble (avg+smooth): 0.75
+==================================================================================
+  How it was reached: PCA and LSTM scores were each z-scored against their own
+  TRAIN score distribution, averaged, then smoothed with a backward 10-sample
+  rolling mean whose threshold is taken from the smoothed TRAIN scores. No step
+  uses a test label, a test score or a future sample, and the headline variant
+  (average + smoothing) is fixed in advance, not picked as the best-on-test.
+  Best honest PR-AUC on this file: 0.75. Ensembling + smoothing lifted the
+  headline well above PCA alone (0.56), but on this stand-in it lands around
+  the seed-averaged LSTM (0.75) and did NOT reach ~0.85. The weak PCA partner
+  caps how much the average can gain. So on this data the temporal model is already
+  close to the ceiling, and honest ensembling does not beat it by much. I would rather
+  report a real 0.75 than tune anything on the test labels to reach 0.85.
+  These are numbers on the SYNTHETIC stand-in file (swat_like.csv), not real data.
+  Real ICS data is much harder: on the real HAI dataset the same pipeline scores
+  PR-AUC roughly 0.05-0.28 (see hai_detector.py). Read this table as a check that
+  the method and the leakage guards work end to end, not as a real-world score.
+==================================================================================
+  runtime: 68s on cpu
