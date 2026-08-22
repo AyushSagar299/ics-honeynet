@@ -14,7 +14,8 @@ for both.
 
 ## Folder layout
 
-- `real-lab/` - the water-tank PLC (a Modbus server) that produces the live values
+- `real-lab/` - the plant: the water-tank PLC plus its small network (S7 mirror, OPC UA
+  gateway, web HMI, background operator traffic), all live-mirroring the same tank in Docker
 - `listener/` - a passive listener (Scapy) that reads the Modbus traffic, plus Zeek
 - `bridge/` - reads the PLC once a second and publishes the values to MQTT
 - `twin/` - the Digital Shadow: keeps the live state and checks for anomalies

@@ -1,4 +1,15 @@
-version: '3.8'
+# The plant side of the project, in Docker: the tank PLC plus the small network
+# of things that would surround a real PLC (an OPC UA gateway, an S7 device, a
+# web HMI, and an engineering workstation that generates the normal traffic).
+#
+#   docker network create --subnet 10.10.0.0/24 real-lab-net    (once)
+#   docker compose up -d --build
+#
+# The addresses are fixed on purpose: the profiling note and the Zeek logs
+# identify the plant by IP (10.10.0.10 = the PLC, 10.10.0.20 = the
+# workstation), so they must not move between runs. The network is external so
+# a listener container can attach to it and sniff, and so it survives a
+# `docker compose down`.
 
 networks:
   real-lab-net:
@@ -6,17 +17,18 @@ networks:
 
 services:
 
-  openplc:
-    image: openplc/openplc_v3
-    container_name: openplc
+  # the tank PLC (process-simulator/) -- the data source everything else reads
+  tank-plc:
+    build: ./process-simulator
+    container_name: tank-plc
     ports:
-      - '8080:8080'   # web UI
       - '502:502'     # Modbus TCP
     networks:
       real-lab-net:
         ipv4_address: 10.10.0.10
     restart: unless-stopped
 
+  # the same plant over S7comm -- mirrors the PLC's registers into DB1
   snap7-sim:
     build: ./snap7
     container_name: snap7-sim
@@ -25,8 +37,10 @@ services:
     networks:
       real-lab-net:
         ipv4_address: 10.10.0.11
+    depends_on: [tank-plc]
     restart: unless-stopped
 
+  # the same plant over OPC UA -- a Modbus -> OPC UA gateway
   opcua-server:
     build: ./opcua
     container_name: opcua-server
@@ -35,23 +49,44 @@ services:
     networks:
       real-lab-net:
         ipv4_address: 10.10.0.12
+    depends_on: [tank-plc]
     restart: unless-stopped
 
+  # the operator's web HMI, reads the PLC and shows the plant state
   flask-hmi:
     build: ./hmi
     container_name: flask-hmi
     ports:
-      - '5000:5000'   # web HMI
+      - '5001:5000'   # web HMI (host side is 5001: macOS AirPlay squats on 5000)
     networks:
       real-lab-net:
         ipv4_address: 10.10.0.13
+    depends_on: [tank-plc]
     restart: unless-stopped
 
+  # the engineering workstation -- polls everything with human-looking timing,
+  # so the network has normal chatter for the listener to capture
   eng-ws:
     build: ./traffic
     container_name: eng-ws
     networks:
       real-lab-net:
         ipv4_address: 10.10.0.20
-    depends_on: [openplc, snap7-sim, opcua-server, flask-hmi]
+    depends_on: [tank-plc, snap7-sim, opcua-server, flask-hmi]
+    restart: unless-stopped
+
+  # Stage B (later): OpenPLC takes over as the PLC. Parked behind a profile so
+  # a plain `docker compose up` does not start it. Known quirks from the
+  # research log: the image is x86 (runs under Rosetta on the Mac) and the
+  # default template serves Modbus on 5020 inside the container, not 502.
+  # Start it with:  docker compose --profile stage-b up -d openplc
+  openplc:
+    image: openplc/openplc_v3
+    container_name: openplc
+    profiles: ["stage-b"]
+    ports:
+      - '8080:8080'   # web UI (upload a program here first)
+    networks:
+      real-lab-net:
+        ipv4_address: 10.10.0.14
     restart: unless-stopped

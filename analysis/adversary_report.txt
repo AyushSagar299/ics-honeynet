@@ -1,25 +1,25 @@
 ================================================================
   ADVERSARY BOT  --  automated attack + honeypot grading
 ================================================================
-  Target:   127.0.0.1:5101
+  Target:   127.0.0.1:5104
   Baseline: 127.0.0.1:5022  (a plain static honeypot, for contrast)
 
 [1] RECON        port open, Modbus answering .............. OK (device reachable)
-[2] BELIEVABILITY  read 12x -> 12 distinct readings, level stdev 6.00
-     verdict: LOOKS LIVE  (a real plant drifts) -> deception holds
+[2] BELIEVABILITY  read 12x -> 12 distinct readings, level stdev 0.03
+     verdict: FROZEN  (values never move) -> an attacker sees it is FAKE
      baseline static: 1 distinct, stdev 0.00  (frozen -> obviously fake)
-[3] FINGERPRINT   tried to detect a honeypot from behaviour (latency stdev 4.3 ms)
-     -> could NOT confirm it is fake from its behaviour. Deception holds.
+[3] FINGERPRINT   tried to detect a honeypot from behaviour (latency stdev 0.2 ms)
+     -> DETECTED as fake (frozen values). Weak deception.
 [4] AGGRESSION    unauthorised write of 1234 -> accepted  (Modbus has no auth; this should be LOGGED by the target)
 [5] RESILIENCE    malformed frame: survived
                   flood 250 connections: survived, still answering
 
 ----------------------------------------------------------------
   SCORES
-    Deception (believability) .......... 100 / 100
-    Detection resistance ...............  85 / 100
+    Deception (believability) ..........   2 / 100
+    Detection resistance ...............  20 / 100
     Resilience (survives attack) ....... 100 / 100
-    OVERALL GRADE ...................... A   (avg 95/100)
+    OVERALL GRADE ...................... D   (avg 41/100)
 ================================================================
   How to read this:
   I attacked this device like a real adversary. A GOOD honeynet
