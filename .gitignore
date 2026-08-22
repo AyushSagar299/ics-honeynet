@@ -33,3 +33,6 @@ venv/
 # Generated artifacts and synthetic stand-in data (regenerable from the scripts)
 *.joblib
 ai/swat_like.csv
+
+# honeytoken bait -- dummy files the decoy HMI regenerates at startup (fake creds; keep out of git)
+honeynet/hmi/bait/
