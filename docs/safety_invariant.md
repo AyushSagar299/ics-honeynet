@@ -26,6 +26,23 @@ misconfigured, the others still hold:
    OT subnet. Only the one-way telemetry bridge crosses the boundary, and only
    outward from the plant.
 
+## What is built and tested here, and what is deployment guidance
+To be precise about it: on the laptop, control 2 is the one that is actually built
+and tested. Attacker writes on the Modbus fleet are answered locally and never
+forwarded to the shared backend, the software data diode in `bridge/` has no
+receive path at all (its self-test checks the source for one), and
+`zero_egress_test.py` confirms nothing reaches the protected side. Controls 1 and 3
+are how a real deployment should be wired (a tap or SPAN port, and a default-deny
+firewall between the decoy and OT networks). `real-lab/` sets up separate Docker
+networks for this, but the laptop demo runs on one host, so the zero-egress test there
+shows the software construction holds, not that a physical boundary does. The diode is
+a software simulation of a hardware data diode, not the real optical device.
+
+By default the demo keeps everything on 127.0.0.1 (`demo.sh` sets `FLEET_BIND`), and the
+threat dashboard only ever listens on 127.0.0.1 because it has no login. The internal
+backends always stay on 127.0.0.1. Only set `FLEET_BIND=0.0.0.0` on an isolated decoy
+network.
+
 ## Data-flow diagram
 ```
     REAL OT PLANT

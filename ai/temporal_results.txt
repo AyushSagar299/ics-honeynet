@@ -22,7 +22,7 @@
   context, so every test row is judged from past samples only, never future
   ones. The counter column was dropped first: it is a plain row index, and
   leaving it in turns into a ramp that flatters whichever model happens to
-  key on it, so this table and swat_results.txt will not match on PCA.
+  key on it. swat_detector.py drops it too, so the PCA rows agree.
   On this file the temporal model came out ahead of PCA on PR-AUC, which fits
   the argument: a slow drift and a stuck sensor look fine instant by instant
   and only stand out as a trajectory. It is not a clean sweep though -- read
@@ -31,4 +31,4 @@
   Either way the seed spread above is worth reading before claiming a winner: a
   gap smaller than the spread is not a real difference on this few attacks.
 ==================================================================================
-  runtime: 77s on cpu
+  runtime: 57s on cpu

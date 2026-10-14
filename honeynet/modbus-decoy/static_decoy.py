@@ -29,4 +29,4 @@ store.setValues(3, 0, FIXED)
 
 if __name__ == "__main__":
     print(f"STATIC Modbus honeypot on port {PORT}. Values never change.", flush=True)
-    StartTcpServer(context=context, address=("0.0.0.0", PORT))
+    StartTcpServer(context=context, address=(os.environ.get("FLEET_BIND", "0.0.0.0"), PORT))

@@ -200,10 +200,12 @@ had been counting only the devices listed in `devices.py` and was silently dropp
 UA reads, writes and probes from the KPIs.
 
 Two honest notes on the tell count. First, the "Only Modbus is exposed" line in
-`honeypot_detector.py` is still appended unconditionally, so the script keeps printing it: the
-plant no longer has that weakness, but until that check actually probes 4840 the number it
-prints is one higher than it should be. That is a fix owed to the detector script, not to the
-honeynet. Second, only reads and writes of the four plant variables are logged, not the
+`honeypot_detector.py` used to be appended unconditionally, which was cheating in the other
+direction. The detector now really does an OPC UA handshake on 4840 and only adds the tell when
+nothing answers, so with the OPC UA decoy running it reports 0 tells on all eight devices. That
+0 is at the application layer only: an `nmap -O` scan of the host still shows an ordinary
+computer and not an embedded PLC, which is a limitation I come back to in Section 7. Second,
+only reads and writes of the four plant variables are logged, not the
 housekeeping requests the OPC UA stack makes when a client connects, since those say nothing
 about what the attacker wanted.
 
@@ -219,8 +221,9 @@ The `ai/` layer is evaluated separately, because it works on the process telemet
 than on the decoy traffic. The models are trained on normal data only and tested on a later
 window, so they never see the attacks beforehand. The numbers are in `ai/swat_results.txt`
 (SWaT-format data) and `ai/hai_results.txt` (the real HAI files). On the SWaT-format data
-the PCA reconstruction is clearly the best of the three (PR-AUC 0.80), and on the real HAI
-data all three are much weaker (PR-AUC 0.05 to 0.28), which is the honest result and shows
+One-Class SVM has the best PR-AUC of the three (0.66) but at about 7,500 false alarms a day,
+and PCA reconstruction gets 0.56 with far fewer false alarms. On the real HAI data all three
+are much weaker (PR-AUC 0.05 to 0.28), which is the honest result and shows
 how much harder real plant data is.
 
 Those three models all judge one sample at a time. A slow drift or a stuck sensor can look
@@ -232,24 +235,28 @@ same scaler fitted on train only, the same 99.5th-percentile threshold rule and 
 separately so none of them straddles the boundary. Each window is scored at its last
 timestamp, so the detector only ever uses past samples.
 
-On the SWaT-format file it won, but not cleanly. Over three seeds it got PR-AUC 0.74 on
-average (range 0.71 to 0.78) against 0.56 for PCA on exactly the same columns. Against that,
-it is slower to fire, 114 to 148 seconds to the first alarm versus 93 for PCA, because the
+On the SWaT-format file it won, but not cleanly. Over three seeds it got PR-AUC 0.73 on
+average (range 0.70 to 0.77) against 0.56 for PCA on exactly the same columns. Averaging the
+PCA and LSTM scores and smoothing them over 10 steps (`ai/ensemble_detector.py`, a variant I
+fixed before looking at the test numbers) gives 0.75, which is the headline figure, always
+shown next to the 0.73 per-seed mean. Against that, the LSTM is slower to fire, 116 to 152
+seconds to the first alarm versus 93 for PCA, because the
 reconstruction error only builds up once a whole window is bad; it catches 3 of the 4 attack
 segments and misses the same stuck-sensor one PCA misses; and with only four segments the
 spread between seeds is not much smaller than the gap itself, so I would not claim this as a
 settled win. One-Class SVM is the only model that catches all four, and it does that at
 around 7,500 false alarms a day, which no operator would accept.
 
-Building it also turned up a problem with the 0.80 above, which I am reporting rather than
-quietly fixing. `swat_detector.py` keeps every numeric column, and `ai/swat_like.csv` has a
+Building it also turned up a problem with my own earlier PCA number, which I am reporting
+rather than quietly fixing. An earlier version of this section said PCA was clearly the best
+model at PR-AUC 0.80. `swat_detector.py` kept every numeric column at that time, and `ai/swat_like.csv` has a
 "Timestamp" column that is really just a row counter. It only ever increases, so in the test
 half it sits outside everything the scaler saw during training and becomes a steady ramp that
 flatters the score. With that column dropped, PCA falls from PR-AUC 0.80 to 0.56, and the
 window model goes the other way, 0.20 with it against 0.78 without, because a monotonic ramp
-is poison for a model that looks at trajectories. `temporal_detector.py` therefore drops
-strictly increasing counter columns and runs all four models on the same 10 sensors, which is
-why its PCA row disagrees with `ai/swat_results.txt`. The fair comparison is the 0.56 one.
+is poison for a model that looks at trajectories. Both scripts now drop strictly increasing
+counter columns and run on the same 10 sensors, so the PCA rows in `ai/swat_results.txt` and
+`ai/temporal_results.txt` agree at 0.56, which is the fair number.
 This does not affect the HAI numbers, where the time column is dropped by name, and it would
 not affect the real SWaT file, where the timestamp is a date string.
 
@@ -268,10 +275,17 @@ The full ELK stack was too heavy to run on a 4 GB Docker setup alongside the pip
 used a lighter log-analysis path instead. The attack traffic comes from my own scripts in
 an isolated lab, not from real attackers on the internet.
 
-For future work I would add an S7 decoy and DNP3 (using Grid-Watch and Caldera for OT), make
-the honeypot detector actually probe the OPC UA port instead of assuming Modbus is the only
-service, regenerate the `ai/swat_results.txt` numbers without the counter column, run the full
-three-network isolation in Docker, expose the honeynet to real traffic, and grow the dataset
+Two more limits matter for how far the believability result goes. The "0 tells" result is at
+the application layer only, because network-stack fingerprinting (`nmap -O`) still identifies
+the host as a normal computer. And the graders (`believability_test.py`, `honeypot_detector.py`,
+`adversary_bot.py`) are my own scripts, so a small blind test with people who do not know
+which endpoint is live would make the result much stronger. The OPC UA decoy also keeps one
+shared simulated plant, so unlike the Modbus fleet an OPC UA write is visible to every OPC UA
+client (it is still contained and never reaches the real plant).
+
+For future work I would add an S7 decoy and DNP3 (using Grid-Watch and Caldera for OT), give
+the decoys a believable network-stack personality, isolate OPC UA writes per attacker, run the
+full three-network isolation in Docker, expose the honeynet to real traffic, and grow the dataset
 for the anomaly-detection part.
 
 ## References

@@ -35,4 +35,4 @@
   PR-AUC roughly 0.05-0.28 (see hai_detector.py). Read this table as a check that
   the method and the leakage guards work end to end, not as a real-world score.
 ==================================================================================
-  runtime: 68s on cpu
+  runtime: 58s on cpu

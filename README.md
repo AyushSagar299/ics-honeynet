@@ -127,8 +127,12 @@ Each folder has its own README with more detail.
 
 ## Quick demo
 
-This brings up the 8-device fleet, the OPC UA decoy on 4840, the static honeypot and the
-threat dashboard in one go, then opens http://localhost:8100.
+This brings up the 8-device fleet, the OPC UA decoy on 4840, the static honeypot, the decoy
+HMI with the honeytoken files on 8090 and the threat dashboard in one go, then opens
+http://localhost:8100. Everything listens on 127.0.0.1 only. To put the decoys on an isolated
+decoy network instead, run it as `FLEET_BIND=0.0.0.0 bash demo.sh` (Windows: set
+`$env:FLEET_BIND="0.0.0.0"` first). The dashboard stays on 127.0.0.1 either way, since it has
+no login.
 
 macOS or Linux:
 
@@ -176,11 +180,21 @@ demonstration of what real attackers would look like on an isolated network.
 
 The main results are in `analysis/` (fig1 to fig3):
 
-- the decoy follows the real plant closely, about 0.11% average error
-- the live decoy's values move over time while the static one stays frozen
+- the decoy follows the real plant closely, about 0.11% average error (this one needs the
+  Docker real-lab running)
+- the live decoy's values move over time while the static one stays frozen (5/5 checks
+  against 3/5)
+- `honeypot_detector.py` finds 0 tells on all eight decoys, at the application layer only
+  (an `nmap -O` scan still shows a normal computer)
+- the flagship decoy matches a documented Modicon M340 behaviour profile on 9 of 9 traits
+  (`analysis/real_plc_reference.json`, written from public documentation, not a capture)
 - the honeypot logs caught all of the Modbus reads/writes and the login attempts
-- the anomaly-detection numbers are in `ai/swat_results.txt`, `ai/hai_results.txt` and
-  `ai/temporal_results.txt`
+- the anomaly-detection numbers are in `ai/swat_results.txt`, `ai/temporal_results.txt`,
+  `ai/ensemble_results.txt` and `ai/hai_results.txt`. The SWaT-format file is a synthetic
+  stand-in (`ai/make_swat_like.py`): PCA 0.56, LSTM 0.73 averaged over three seeds, and 0.75
+  for the smoothed PCA + LSTM ensemble. On the real HAI 21.03 data the models are much
+  weaker (0.05 to 0.28). The HAI files are not in the repo; `ai/hai_detector.py` prints
+  where to download them (kagglehub) and reads `HAI_DIR` if they are somewhere else.
 
 The write-up is in `docs/report.md` and the analysis notebook is `analysis/analysis.ipynb`.
 
@@ -188,6 +202,8 @@ The write-up is in `docs/report.md` and the analysis notebook is `analysis/analy
 
 - Most Docker images are arm64. Conpot and Kali are amd64 only, so they need
   `--platform linux/amd64` and Rosetta turned on.
+- The InfluxDB and Grafana passwords in `pipeline/docker-compose.yml` are throwaway
+  defaults for the local lab only. Change them before running it anywhere shared.
 - pymodbus is pinned to 3.6.9 because version 3.13 changed the server API. See
   `requirements.txt`.
 - Port 502 needs sudo on a Mac, so on the laptop the servers use 5020, 5021 and 5022.

@@ -24,6 +24,13 @@ to the Modbus ones.
 Safety: this never opens a connection towards the real plant. Every value it
 serves is made up here, in this process, and anything an attacker writes stays
 here too.
+
+Known difference from the Modbus fleet: the fleet gives every source IP its own
+private fork, so a write is only ever seen by the attacker who made it. Here
+there is one shared PLANT, so a write is seen by every OPC UA client until the
+value drifts back. Still contained (nothing leaves this process), but not
+isolated per attacker. Doing it properly means a per-session view of reads,
+writes and subscriptions inside asyncua, which I left as future work.
 """
 
 import os

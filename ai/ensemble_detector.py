@@ -149,7 +149,11 @@ def main():
     # half reaches back at most WINDOW-1 rows into the train half for context.
     # that is past data only, never future, same as temporal_detector.py.
     allw = windows(Xs, WINDOW)                                 # aligned to rows off..N
-    wtr = allw[:it0]                                           # training windows only
+    # training windows: end in the train half AND contain no attack row. on the
+    # shipped file the train half is all normal anyway, but if an attack ever lands
+    # before the 50% mark the model must not learn it as normal.
+    clean = np.array([not y[w:w + WINDOW].any() for w in range(it0)], dtype=bool)
+    wtr = allw[:it0][clean]
     seed_scores = []
     for seed in SEEDS:
         model = train_ae(wtr, seed)
