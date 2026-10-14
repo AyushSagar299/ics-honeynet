@@ -62,9 +62,8 @@ def drop_counter_cols(X, cols):
     model. on the real SWaT file the timestamp is a date string and on HAI the
     time column is dropped by name, so in both of those cases this function
     finds nothing and changes nothing.
-    NOTE: this is why my PCA row here does not match the PCA row in
-    swat_results.txt -- that script leaves the counter in. same code, same
-    split, just one junk column less.
+    swat_detector.py drops the counter the same way now, so the PCA rows in
+    the two results files agree (0.56 on the stand-in).
     """
     keep = [i for i in range(X.shape[1]) if not np.all(np.diff(X[:, i]) > 0)]
     dropped = [cols[i] for i in range(X.shape[1]) if i not in keep]
@@ -261,7 +260,7 @@ def main():
     out("  context, so every test row is judged from past samples only, never future")
     out("  ones. The counter column was dropped first: it is a plain row index, and")
     out("  leaving it in turns into a ramp that flatters whichever model happens to")
-    out("  key on it, so this table and swat_results.txt will not match on PCA.")
+    out("  key on it. swat_detector.py drops it too, so the PCA rows agree.")
     if np.mean(lstm_aucs) > pca_auc:
         out("  On this file the temporal model came out ahead of PCA on PR-AUC, which fits")
         out("  the argument: a slow drift and a stuck sensor look fine instant by instant")

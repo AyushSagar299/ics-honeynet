@@ -33,6 +33,7 @@ simplified on purpose.
 """
 
 import random
+import time
 
 # same list run_fleet.py uses -- these labels are real 0/1 actuators, not analog
 BOOLEAN_SIGNALS = ("pump", "burner", "pump_a", "pump_b")
@@ -127,15 +128,29 @@ class Fork:
 SESSIONS = {}
 
 
+STALE_AFTER = 600.0      # forget a source we have not heard from in 10 minutes
+MAX_SESSIONS = 4096
+
+
+def _tidy(now):
+    """keep SESSIONS bounded. the heal only runs when that attacker sends more traffic,
+    so someone who writes once and leaves would otherwise keep an 'active' fork forever.
+    drop idle observers and anything stale, and if that is still not enough, the oldest."""
+    for k in [k for k, v in SESSIONS.items()
+              if not v.active or now - max(v.t_last, v.t_write) > STALE_AFTER]:
+        del SESSIONS[k]
+    if len(SESSIONS) > MAX_SESSIONS:
+        oldest = sorted(SESSIONS, key=lambda k: max(SESSIONS[k].t_last, SESSIONS[k].t_write))
+        for k in oldest[:len(SESSIONS) - MAX_SESSIONS]:
+            del SESSIONS[k]
+
+
 def get_fork(name, ip):
     key = (name, ip)
     f = SESSIONS.get(key)
     if f is None:
-        if len(SESSIONS) > 4096:
-            # tidy up so a scan of the whole internet can't grow this forever --
-            # drop the sessions that are just idle read-only observers
-            for k in [k for k, v in SESSIONS.items() if not v.active]:
-                del SESSIONS[k]
+        if len(SESSIONS) >= MAX_SESSIONS or len(SESSIONS) % 256 == 255:
+            _tidy(time.time())
         f = Fork()
         SESSIONS[key] = f
     return f
@@ -191,6 +206,8 @@ def apply_write(model, fork, writes, now):
 
     fork.active = True
     fork.t_write = now
+    if len(summary) > 8:
+        summary = summary[:8] + ["(+%d more)" % (len(summary) - 8)]
     fork.summary = ", ".join(summary) if summary else "unmapped write"
     if fork.t_last == 0.0:
         fork.t_last = now

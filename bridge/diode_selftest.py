@@ -56,7 +56,12 @@ def check_forward():
         tx.push(f)
 
     for i in range(len(fakes)):
-        got = rx.recv_state(timeout=2)
+        try:
+            got = rx.recv_state(timeout=2)
+        except socket.timeout:
+            # udp gives no delivery promise; report it instead of crashing the test
+            print(f"    FAIL: frame {i} never arrived within 2 s")
+            raise SystemExit(1)
         print(f"    received frame {i}: level={got['level']} temp={got['temp']} pump={got['pump']}")
 
     print("    ok, telemetry flows plant -> honeynet")

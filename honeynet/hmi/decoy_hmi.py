@@ -225,4 +225,4 @@ write_bait()
 if __name__ == "__main__":
     print(f"Decoy HMI login honeypot on port {PORT}. Every attempt is logged.", flush=True)
     print(f"Honeytokens planted in {BAIT_DIR} (all dummy content).", flush=True)
-    app.run(host="0.0.0.0", port=PORT)
+    app.run(host=os.environ.get("FLEET_BIND", "0.0.0.0"), port=PORT)

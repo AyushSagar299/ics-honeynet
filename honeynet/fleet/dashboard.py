@@ -142,4 +142,6 @@ def stream():
 if __name__ == "__main__":
     print("Honeynet Threat Intelligence on http://localhost:8100", flush=True)
     # threaded=True so a streaming connection doesn't block the other routes
-    app.run(host="0.0.0.0", port=int(os.environ.get("DASH_PORT", "8100")), threaded=True)
+    # the dashboard is our own console with no login, so it only listens on this
+    # machine. set DASH_BIND=0.0.0.0 only on an isolated analyst network.
+    app.run(host=os.environ.get("DASH_BIND", "127.0.0.1"), port=int(os.environ.get("DASH_PORT", "8100")), threaded=True)

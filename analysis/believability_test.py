@@ -14,7 +14,7 @@ import time
 from pymodbus.client import ModbusTcpClient
 
 host = sys.argv[1] if len(sys.argv) > 1 else "127.0.0.1"
-port = int(sys.argv[2]) if len(sys.argv) > 2 else 5021
+port = int(sys.argv[2]) if len(sys.argv) > 2 else 5101   # the flagship fleet device
 label = sys.argv[3] if len(sys.argv) > 3 else f"{host}:{port}"
 
 client = ModbusTcpClient(host, port=port)

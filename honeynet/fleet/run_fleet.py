@@ -204,7 +204,7 @@ def parse_writes(pdu):
         out.append(("reg", int.from_bytes(pdu[1:3], "big"), int.from_bytes(pdu[3:5], "big")))
     elif fc == 0x10:                                  # write multiple holding registers
         start = int.from_bytes(pdu[1:3], "big")
-        cnt = int.from_bytes(pdu[3:5], "big")
+        cnt = min(int.from_bytes(pdu[3:5], "big"), 123)   # 123 = modbus spec max per request
         data = pdu[6:6 + 2 * cnt]
         for k in range(min(cnt, len(data) // 2)):
             out.append(("reg", start + k, int.from_bytes(data[2 * k:2 * k + 2], "big")))
@@ -213,11 +213,13 @@ def parse_writes(pdu):
         out.append(("coil", int.from_bytes(pdu[1:3], "big"), 1 if raw == 0xFF00 else 0))
     elif fc == 0x0F:                                  # write multiple coils
         start = int.from_bytes(pdu[1:3], "big")
-        cnt = int.from_bytes(pdu[3:5], "big")
+        # the count comes from the attacker, so only trust it as far as the bytes they
+        # actually sent (and the spec max of 1968). before this, a 12 byte frame asking
+        # for 65535 coils made us loop 65535 times and log a ~200 KB line.
+        cnt = min(int.from_bytes(pdu[3:5], "big"), 1968)
         data = pdu[6:]
-        for k in range(cnt):
-            byte = data[k >> 3] if (k >> 3) < len(data) else 0
-            out.append(("coil", start + k, (byte >> (k & 7)) & 1))
+        for k in range(min(cnt, len(data) * 8)):
+            out.append(("coil", start + k, (data[k >> 3] >> (k & 7)) & 1))
     return out
 
 
@@ -286,7 +288,8 @@ def make_sensor(name, kind, internal_port):
                     # so nothing the attacker writes reaches the shared live process.
                     writes = parse_writes(pdu)
                     log_action(name, "write", {"address": writes[0][1] if writes else None,
-                                               "values": [w[2] for w in writes], "ip": ip})
+                                               "values": [w[2] for w in writes[:32]],
+                                               "count": len(writes), "ip": ip})
                     attack_physics.apply_write(model, fork, writes, time.time())
                     fresh = attack_physics.take_new_alarms(fork)
                     if fresh:
