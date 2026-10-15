@@ -22,7 +22,6 @@ venv/
 
 # Editor
 .vscode/
-.claude/
 *.swp
 
 # Secrets / local env
