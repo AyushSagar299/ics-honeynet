@@ -35,3 +35,6 @@ ai/swat_like.csv
 
 # honeytoken bait -- dummy files the decoy HMI regenerates at startup (fake creds; keep out of git)
 honeynet/hmi/bait/
+
+# decoy HMI login attempts (written where the HMI is started from)
+hmi_attempts.log

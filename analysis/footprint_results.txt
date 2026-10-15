@@ -1,0 +1,10 @@
+honeynet footprint, median of 15 samples 2 s apart
+  process            count  RSS (MB)   CPU %
+  run_fleet.py          10     100.2     0.0
+  decoy_opcua.py         1      15.5     0.0
+  static_decoy.py        1       8.6     0.0
+  decoy_hmi.py           1       9.6     0.0
+  dashboard.py           1      12.8     0.0
+  TOTAL                        146.8     0.0
+  total RSS range over the samples: 144.1 - 149.5 MB
+  (RSS is an upper bound: shared libraries are counted once per process)
