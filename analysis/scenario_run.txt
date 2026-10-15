@@ -1,0 +1,88 @@
+Full attack-scenario run, 15 October 2026 22:45, all attacks from 127.0.0.1 against the demo (logs emptied first, so no example IPs)
+
+================ S1 recon (nmap) :: python attacker/scripts/recon.py 127.0.0.1 5101
+Starting Nmap 7.991 ( https://nmap.org ) at 2026-10-15 22:45 +0200
+Nmap scan report for localhost (127.0.0.1)
+Host is up (0.00037s latency).
+
+PORT     STATE SERVICE
+5101/tcp open  admdog
+
+Nmap done: 1 IP address (1 host up) scanned in 0.08 seconds
+[recon] nmap port scan + Modbus fingerprint of 127.0.0.1:5101
+        nmap -Pn -sT -p 5101 --script modbus-discover --script-timeout 20s 127.0.0.1
+
+================ S2 register read, fleet decoy :: python attacker/scripts/read_registers.py 127.0.0.1 5101
+[enum] reading registers 0..5 from 127.0.0.1:5101, three times (2s apart)
+        level=57.4%  temp=23.4C  pump=0
+        level=57.2%  temp=22.5C  pump=0
+        level=54.9%  temp=22.6C  pump=0
+[enum] distinct readings: 3  ->  LIVE (values move -- looks like a real plant)
+
+================ S2 register read, static decoy :: python attacker/scripts/read_registers.py 127.0.0.1 5022
+[enum] reading registers 0..5 from 127.0.0.1:5022, three times (2s apart)
+        level=50.0%  temp=23.5C  pump=1
+        level=50.0%  temp=23.5C  pump=1
+        level=50.0%  temp=23.5C  pump=1
+[enum] distinct readings: 1  ->  STATIC (frozen -- gives itself away as fake)
+
+================ S3 unauthorised write :: python attacker/scripts/write_register.py 127.0.0.1 5101
+[write] unauthorised write to 127.0.0.1:5101  (Modbus asks for no password)
+        write register 0 = 1234, accepted: True
+        write coil 0 = ON,     accepted: True
+        -> the decoy logged both writes; the real PLC is unaffected
+
+================ S4 HMI credential brute force :: python attacker/scripts/bruteforce_hmi.py http://127.0.0.1:8090
+[brute] trying 16 logins against http://127.0.0.1:8090/login
+[brute] 16 attempts sent.
+        result: no valid login (honeypot rejects everything)
+        -> every attempt was logged by the decoy HMI
+
+================ S5 replay and malformed frames :: python attacker/scripts/replay.py 127.0.0.1 5101
+[replay] probing 127.0.0.1:5101
+        replayed read : sent 12 bytes, got 21 back 00010000000f01030c043300e20077000100000000
+        malformed   : sent 10 bytes, got 0 back (no reply)
+        read again  : sent 12 bytes, got 21 back 00030000000f01030c044200e80078000100000000
+[replay] decoy still responding after malformed input: True
+
+================ S6 OPC UA reconnaissance :: python attacker/scripts/recon_opcua.py 127.0.0.1 4840
+[opcua] connecting to opc.tcp://127.0.0.1:4840/plc/
+        vendor:   Siemens AG
+        product:  SIMATIC S7-1500 CPU 1516-3 PN/DP
+        firmware: V2.9.4  (order no 6ES7516-3AN02-0AB0)
+        found object: PLC_09
+        variables: level_%, temp_C, pressure_bar, pump
+        read 1: {'level_%': 72.22, 'temp_C': 23.22, 'pressure_bar': 5.44, 'pump': False}
+        read 2: {'level_%': 62.55, 'temp_C': 23.05, 'pressure_bar': 5.5, 'pump': False}
+        moved:  ['level_%', 'temp_C', 'pressure_bar']
+        write level_% = 999.0, accepted: True
+        two seconds later level_% reads 93.25 -- the process carries on over the write
+
+================ S7 honeytoken theft :: curl /files and /files/plc_passwords.txt
+listing HTTP 200
+download HTTP 200
+
+================ S8 resilience test (malformed frames, connection flood, writes) :: python analysis/resilience_test.py 127.0.0.1 5101
+    held 60 connections; a new client could still connect: True
+
+[3] write flood: 100 rapid unauthorised writes (no password needed)...
+    100/100 writes accepted -- this is the LURE, not a weakness
+
+=== VERDICT ===
+  Attack surface (meant to be OPEN):  reads + writes accepted, no auth  ->  the lure
+  Resilience (meant to be HARD):
+     - survived garbage/malformed flood : YES
+     - survived connection flood        : YES
+     - still up after the whole assault : YES
+  Containment: a write here can never reach the real plant -- the decoy is a
+     separate program on a separate network (proven: writing 9999 left the real PLC untouched).
+
+  => A honeypot is EASY to attack on purpose, but should be HARD to crash or escape.
+
+================ What the honeynet logged during this run
+connections.log: 224 connections; actions.log: 288 actions; source IPs seen: 127.0.0.1 only
+decoy HMI login attempts logged (hmi_attempts.log): 16 of 16 sent
+OPC UA decoy events in actions.log: 10
+honeytoken event: "asset": "file listing", "severity": "medium", "mitre": "T0811"
+honeytoken event: "asset": "plc_passwords.txt", "severity": "high", "mitre": "T0882"
+MITRE mapping of this run: analysis/attack_mitre_map.txt
