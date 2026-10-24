@@ -1,0 +1,99 @@
+{
+ "parsed": {
+  "swat": {
+   "Isolation Forest": 0.17,
+   "One-Class SVM": 0.66,
+   "PCA reconstruction": 0.56
+  },
+  "temporal": {
+   "Isolation Forest": 0.17,
+   "One-Class SVM": 0.66,
+   "PCA reconstruction": 0.56,
+   "LSTM-AE (seed 0)": 0.77,
+   "LSTM-AE (seed 1)": 0.7,
+   "LSTM-AE (seed 2)": 0.72
+  },
+  "ensemble": {
+   "Isolation Forest": 0.17,
+   "One-Class SVM": 0.66,
+   "PCA reconstruction": 0.56,
+   "LSTM-AE (seed 0)": 0.77,
+   "LSTM-AE (seed 1)": 0.7,
+   "LSTM-AE (seed 2)": 0.72,
+   "Ensemble (avg)": 0.73,
+   "Ensemble (max)": 0.74,
+   "Ensemble avg sm10": 0.75,
+   "Ensemble max sm10": 0.76
+  },
+  "hai": {
+   "Isolation Forest": 0.05,
+   "One-Class SVM": 0.27,
+   "PCA reconstruction": 0.28
+  },
+  "lstm": [
+   0.73,
+   0.7,
+   0.77
+  ]
+ },
+ "fidelity": [
+  {
+   "run": 1,
+   "n": 79,
+   "duration_s": 39.53,
+   "median_dt": 0.509999999999998,
+   "mae_pp": 0.0189873417721519,
+   "mismatches": 3,
+   "max_abs_err": 0.8999999999999986,
+   "mean_level": 56.05443037974684,
+   "rel_mae_pct": 0.03387304383171872,
+   "best_lag_samples": 0,
+   "best_lag_s": 0.0
+  },
+  {
+   "run": 2,
+   "n": 79,
+   "duration_s": 39.51,
+   "median_dt": 0.509999999999998,
+   "mae_pp": 0.11518987341772145,
+   "mismatches": 13,
+   "max_abs_err": 1.2999999999999972,
+   "mean_level": 75.0987341772152,
+   "rel_mae_pct": 0.1533845738942825,
+   "best_lag_samples": 0,
+   "best_lag_s": 0.0
+  },
+  {
+   "run": 3,
+   "n": 79,
+   "duration_s": 39.51,
+   "median_dt": 0.509999999999998,
+   "mae_pp": 0.10632911392405062,
+   "mismatches": 16,
+   "max_abs_err": 1.3999999999999986,
+   "mean_level": 45.58481012658228,
+   "rel_mae_pct": 0.2332555814728423,
+   "best_lag_samples": 0,
+   "best_lag_s": 0.0
+  }
+ ],
+ "bot": {
+  "scores": [
+   83,
+   85,
+   82,
+   89,
+   83,
+   80,
+   95,
+   84,
+   79,
+   76
+  ],
+  "median": 83.0,
+  "min": 76,
+  "max": 95,
+  "n_ge_85": 3,
+  "n_gt_85": 2
+ }
+}

@@ -178,23 +178,31 @@ demonstration of what real attackers would look like on an isolated network.
 
 ## Results
 
-The main results are in `analysis/` (fig1 to fig3):
+The main results are in `analysis/` and `ai/`:
 
-- the decoy follows the real plant closely, about 0.11% average error (this one needs the
-  Docker real-lab running)
-- the live decoy's values move over time while the static one stays frozen (5/5 checks
-  against 3/5)
-- `honeypot_detector.py` finds 0 tells on all eight decoys, at the application layer only
-  (an `nmap -O` scan still shows a normal computer)
-- the flagship decoy matches a documented Modicon M340 behaviour profile on 9 of 9 traits
+- the live decoy on 5021 (the one fed by the shadow) follows the plant with a mean level
+  error of 0.08 percentage points over three 40 s re-runs (0.02 to 0.12, files in
+  `analysis/fidelity_reruns/`; the first run is `analysis/fidelity.csv`). this needs the
+  plant, bridge and twin running
+- shadow-fed decoy against the frozen static decoy, same pipeline: 4/5 believability checks
+  against 3/5, and 2 detector tells against 3. the only tell that differs is "frozen values"
+- the 8-device fleet makes its own values (it does not read the shadow): 5/5 checks, 0 tells
+  on all eight at the application layer only (an `nmap -O` scan still shows a normal
+  computer), 9 of 9 traits against a documented Modicon M340 profile
   (`analysis/real_plc_reference.json`, written from public documentation, not a capture)
-- the honeypot logs caught all of the Modbus reads/writes and the login attempts
+- a full run of all attack scenarios is saved in `analysis/scenario_run.txt`; the logs map
+  to seven ATT&CK for ICS techniques (`analysis/attack_mitre_map.txt`)
+- idle footprint of the demo: about 147 MB total RSS (`analysis/footprint.py`,
+  `analysis/footprint_results.txt`)
 - the anomaly-detection numbers are in `ai/swat_results.txt`, `ai/temporal_results.txt`,
   `ai/ensemble_results.txt` and `ai/hai_results.txt`. The SWaT-format file is a synthetic
   stand-in (`ai/make_swat_like.py`): PCA 0.56, LSTM 0.73 averaged over three seeds, and 0.75
   for the smoothed PCA + LSTM ensemble. On the real HAI 21.03 data the models are much
-  weaker (0.05 to 0.28). The HAI files are not in the repo; `ai/hai_detector.py` prints
-  where to download them (kagglehub) and reads `HAI_DIR` if they are somewhere else.
+  weaker (0.05 to 0.28). The HAI files are not in git (train1.csv is over GitHub's 100 MB
+  limit): put `train1.csv` and `test1.csv` in `ai/hai-21.03/` and `ai/hai_detector.py`
+  finds them there; it also reads `HAI_DIR` if they are somewhere else
+- the scripts that draw the report figures 6.1, 6.2, 7.2, 7.4, 7.7 and 7.8 are in
+  `analysis/report_figures/` (`ml_figs.py`, `other_figs.py`), next to the figures they make
 
 The write-up is in `docs/report.md` and the analysis notebook is `analysis/analysis.ipynb`.
 

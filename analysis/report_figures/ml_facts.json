@@ -1,0 +1,51 @@
+{
+ "rows": 20000,
+ "features": [
+  "FIT101",
+  "LIT101",
+  "MV101",
+  "P101",
+  "AIT201",
+  "FIT201",
+  "LIT301",
+  "P301",
+  "PIT501",
+  "FIT601"
+ ],
+ "attack_rows_total": 1150,
+ "segments": [
+  [
+   11000,
+   11300
+  ],
+  [
+   13000,
+   13250
+  ],
+  [
+   15000,
+   15400
+  ],
+  [
+   17000,
+   17200
+  ]
+ ],
+ "split_row": 11000,
+ "first_attack_row": 11000,
+ "train_normal": 11000,
+ "test_rows": 9000,
+ "test_attack_rows": 1150,
+ "test_positive_rate": 0.12777777777777777,
+ "always_normal_acc": 0.8722222222222222,
+ "pca_k": 5,
+ "train_windows": 10971,
+ "test_windows": 9000,
+ "ocsvm_subsample": 8000,
+ "average_precision": {
+  "Isolation Forest": 0.1712423226503133,
+  "One-Class SVM": 0.659950237849981,
+  "PCA reconstruction": 0.5647270249577422,
+  "LSTM-AE (seed 0)": 0.7741950235002514
+ }
+}

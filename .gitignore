@@ -32,6 +32,9 @@ venv/
 # Generated artifacts and synthetic stand-in data (regenerable from the scripts)
 *.joblib
 ai/swat_like.csv
+# the real HAI 21.03 files sit next to hai_detector.py but stay out of git:
+# train1.csv alone is over github's 100 MB limit, and it is someone else's dataset
+ai/hai-21.03/
 
 # honeytoken bait -- dummy files the decoy HMI regenerates at startup (fake creds; keep out of git)
 honeynet/hmi/bait/

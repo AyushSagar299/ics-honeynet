@@ -26,11 +26,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from swat_detector import evaluate  # reuse the exact metrics/reporting
 
-# kagglehub caches under ~/.cache/kagglehub on windows, macos and linux alike, so
-# build the path from the home dir instead of hardcoding it. set HAI_DIR to override.
-HAI = os.environ.get("HAI_DIR") or os.path.join(
-    os.path.expanduser("~"), ".cache", "kagglehub", "datasets", "icsdataset",
-    "hai-security-dataset", "versions", "10")
+# where the data is looked for, in this order: HAI_DIR if set, then ai/hai-21.03/
+# inside the project (kept out of git, train1.csv alone is over github's 100 MB
+# limit), then the kagglehub cache, which is ~/.cache/kagglehub on windows, macos
+# and linux alike, so the path is built from the home dir instead of hardcoded.
+KAGGLE = os.path.join(os.path.expanduser("~"), ".cache", "kagglehub", "datasets",
+                      "icsdataset", "hai-security-dataset", "versions", "10")
+HAI = os.environ.get("HAI_DIR") or (HERE if os.path.isdir(os.path.join(HERE, "hai-21.03")) else KAGGLE)
 TRAIN = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HAI, "hai-21.03", "train1.csv")
 TEST = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HAI, "hai-21.03", "test1.csv")
 
@@ -52,7 +54,8 @@ def main():
         print("HAI dataset not found, looked for:")
         for p in missing:
             print("  ", p)
-        print("get it with kagglehub:")
+        print("get train1.csv.gz and test1.csv.gz from github.com/icsdataset/hai (folder hai-21.03),")
+        print("unzip them into ai/hai-21.03/ and run this again. or get it with kagglehub:")
         print("   pip install kagglehub")
         print("   " + sys.executable +
               " -c \"import kagglehub; print(kagglehub.dataset_download('icsdataset/hai-security-dataset'))\"")
